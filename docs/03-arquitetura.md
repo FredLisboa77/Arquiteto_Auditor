@@ -218,7 +218,7 @@ curl.exe -sSL -o modelos\tessdata\por.traineddata https://github.com/tesseract-o
 Verificação: `.venv\Scripts\python scripts\verificar_ambiente.py`.
 
 ### 6.3 Modelos do Ollama no disco D:
-O C: tem só 66 GB livres. Defina a variável de ambiente de usuário `OLLAMA_MODELS = D:\ollama\models`, reinicie o Ollama e (opcional) mova os modelos existentes. Modelos adicionais a baixar quando chegar a fase correspondente:
+O C: tem só 66 GB livres. **Já configurado neste notebook:** a variável de ambiente de usuário `OLLAMA_MODELS = D:\dev\ollama-models` (6,2 GB em 30/10/2026). Em outra máquina, defina a mesma variável e reinicie o Ollama. Modelos adicionais a baixar quando chegar a fase correspondente:
 ```powershell
 ollama pull nomic-embed-text      # ~275 MB, embeddings para busca em leis
 ```

@@ -11,7 +11,7 @@
 | Fase | Nome | Sessões | Entregável principal |
 |---|---|---|---|
 | 0 | Planejamento | — | Estes documentos, `CLAUDE.md`, `.gitignore`, pastas ✅ |
-| 1 | Ambiente e proteção | 1–2 | `pip` funcionando, Tesseract, esqueleto do projeto, anti-vazamento, repositório no GitHub |
+| 1 | Ambiente e proteção | 1–2 | `pip` funcionando, Tesseract, esqueleto do projeto, anti-vazamento, repositório no GitHub ✅ (30/10/2026) |
 | 2 | Modelo de dados e gabarito | 2–3 | Classes de domínio + formato JSON do gabarito + normalizador de números |
 | 3 | Base sintética I — pranchas | 3–4 | Gerador de pranchas vetoriais variadas + diagnóstico dos PDFs reais |
 | 4 | Base sintética II — escaneados, memoriais, leis, revisões | 3–4 | Matrículas/escrituras "escaneadas", memoriais, leis, normas, conjunto R00/R01 |
@@ -43,13 +43,13 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 6. Script `scripts/verificar_ambiente.py`: confere Python, Tesseract (`por`), Ollama e modelo, GPU.
 7. Primeiro commit e criação do repositório público no GitHub (**com sua confirmação**).
 
-**Critérios de aceite**
-- [ ] `pip install` funciona sem flags especiais.
-- [ ] `tesseract --list-langs` mostra `por`.
-- [ ] `python scripts/verificar_ambiente.py` mostra tudo verde.
-- [ ] `pytest` passa.
-- [ ] **Teste de vazamento:** copiar um PDF qualquer para `dados_privados/` e outro para a raiz, tentar `git add -f` + `git commit` → o commit é **bloqueado** com mensagem clara.
-- [ ] Repositório no GitHub contém apenas arquivos esperados (eu listo, você confere).
+**Critérios de aceite** — concluída em 30/10/2026
+- [x] `pip install` funciona sem flags especiais (pip 26 usa os certificados do Windows; causa do erro: Norton 360).
+- [x] O Tesseract lista `por` (em `modelos/tessdata/`).
+- [x] `python scripts/verificar_ambiente.py` mostra tudo verde.
+- [x] `pytest` passa (10 testes).
+- [x] **Teste de vazamento:** PDFs falsos em `dados_privados/` e na raiz, forçados com `git add -f` → commit **bloqueado** com mensagem clara.
+- [x] O repositório `FredLisboa77/Arquiteto_Auditor` contém apenas os 20 arquivos esperados.
 
 ---
 
