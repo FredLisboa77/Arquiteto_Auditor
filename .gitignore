@@ -1,0 +1,92 @@
+# =====================================================================
+# Arquiteto Auditor — .gitignore
+# REGRA DE OURO: documentos reais, histórico de relatórios e qualquer
+# dado pessoal NUNCA vão para o repositório (público). Veja CLAUDE.md.
+# Proteção em camadas: (1) pasta dados_privados/ inteira ignorada;
+# (2) todo PDF/imagem/DOCX ignorado em qualquer lugar, exceto nas
+# pastas de dados sintéticos; (3) verificação antes de cada commit.
+# =====================================================================
+
+# ---------- 1. Dados privados (documentos reais, gabarito real, histórico) ----------
+dados_privados/*
+!dados_privados/LEIAME.md
+
+# ---------- 2. Documentos e imagens: bloqueados em TODO o repositório ----------
+*.pdf
+*.PDF
+*.docx
+*.doc
+*.odt
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.bmp
+*.dwg
+*.dxf
+*.zip
+*.7z
+*.rar
+
+# ... exceto onde ficam os documentos SINTÉTICOS (fictícios, sem dados pessoais)
+!dados_sinteticos/**/*.pdf
+!dados_sinteticos/**/*.png
+!dados_sinteticos/**/*.jpg
+!dados_sinteticos/**/*.docx
+!tests/fixtures/**/*.pdf
+!tests/fixtures/**/*.png
+# ... e imagens da documentação (capturas de tela com dados SINTÉTICOS apenas)
+!docs/img/*.png
+
+# ---------- 3. Banco de dados local e relatórios gerados ----------
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+/saida/
+
+# ---------- 4. Modelos de IA e OCR (grandes, baixados à parte) ----------
+modelos/*
+!modelos/LEIAME.md
+*.gguf
+*.traineddata
+*.onnx
+*.safetensors
+*.bin
+
+# ---------- 5. Ambiente Python ----------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- 6. Empacotamento (PyInstaller / instalador) ----------
+build/
+dist/
+*.spec.bak
+instalador/saida/
+
+# ---------- 7. Configurações locais e segredos ----------
+.env
+*.local.toml
+config.local.*
+.claude/settings.local.json
+
+# ---------- 8. Sistema operacional / editores ----------
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.log
+
+# ---------- 9. Arquivos de trabalho pessoais na raiz ----------
+Prompt Final de Desenvolvimento.txt
+Untitled-*

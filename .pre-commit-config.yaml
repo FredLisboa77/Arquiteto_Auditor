@@ -1,0 +1,12 @@
+# Verificações automáticas antes de cada commit.
+# Instalação (uma vez):  .venv\Scripts\pre-commit install
+# Rodar manualmente:     .venv\Scripts\pre-commit run --all-files
+repos:
+  - repo: local
+    hooks:
+      - id: anti-vazamento
+        name: Anti-vazamento de dados pessoais
+        entry: python scripts/verificar_vazamento.py
+        language: system
+        pass_filenames: true
+        stages: [pre-commit]

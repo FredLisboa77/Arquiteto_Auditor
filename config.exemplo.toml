@@ -1,0 +1,20 @@
+# Configuração do Arquiteto Auditor — MODELO.
+# Copie este arquivo para "config.local.toml" (ignorado pelo Git) e ajuste.
+
+[revisor]
+nome = "Seu Nome"
+registro = "CAU A000000-0"
+
+[pastas]
+# Onde ficam histórico, relatórios e cache (dados pessoais — nunca versionar).
+dados = "dados_privados"
+
+[ocr]
+tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
+tessdata_dir = "modelos/tessdata"
+idioma = "por"
+
+[llm]
+endereco = "http://127.0.0.1:11434"
+modelo = "qwen2.5:7b-instruct-q4_K_M"
+temperatura = 0

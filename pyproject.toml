@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arquiteto-auditor"
+version = "0.0.1"
+description = "Apoio local à conferência documental de projetos arquitetônicos residenciais"
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+requires-python = ">=3.11,<3.12"
+authors = [{ name = "Fred Lisboa" }]
+# Dependências da aplicação são adicionadas fase a fase (ver docs/04-plano-de-fases.md).
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "pre-commit>=3.7",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
