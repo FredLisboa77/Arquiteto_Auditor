@@ -1,0 +1,103 @@
+{
+  "semente": 106,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA ALMEIDA",
+    "autor": "Sara Melo Araújo",
+    "registro_autor": "CAU A286237-7",
+    "rrt": "10951015",
+    "revisao": "R00",
+    "endereco": "Avenida dos Ipês, 202",
+    "lote": "32",
+    "quadra": "F",
+    "condominio": "Residencial Mendes",
+    "municipio": "Campo Santos",
+    "matricula": "73.796",
+    "cartorio": "2º Ofício de Registro de Imóveis de Campo Santos",
+    "proprietario": "Valentim Azevedo Correia",
+    "cpf_proprietario": "743.747.224-46",
+    "escritorio": "Grupo Monteiro Arquitetura"
+  },
+  "terreno": {
+    "testada": 15.0,
+    "profundidade": 30.0
+  },
+  "edificacao": {
+    "largura": 12.0,
+    "profundidade": 15.76,
+    "recuo_frontal": 4.5,
+    "recuo_lateral_e": 1.5,
+    "areas_pavimentos": [
+      189.12,
+      151.3
+    ],
+    "altura": 9.5,
+    "muro_altura": 1.8,
+    "area_permeavel": 90.0
+  },
+  "prefeitura": {
+    "lote_area_min": 250.0,
+    "testada_min": 10.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 40.0,
+    "ca_max": 1.2,
+    "permeavel_min": 15.0,
+    "altura_max": 9.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": null,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": 9.0,
+    "pavimentos_max": null,
+    "muro_altura_max": 1.8
+  },
+  "variacao": {
+    "estilo_carimbo": 1,
+    "estilo_quadro": 3,
+    "formato": "A3",
+    "decimal_ponto": false,
+    "cotas_rotuladas": false,
+    "caixa_alta": true,
+    "arquivo_unico": true,
+    "estilo_software": "revit",
+    "estilo_norte": "seta"
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "to_excedida",
+    "recuo_frontal_insuficiente",
+    "altura_excedida"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 450.0,
+    "projecao": 189.12,
+    "recuo_lateral_d": 1.5,
+    "recuo_fundos": 9.74,
+    "area_total": 340.42,
+    "to": 42.03,
+    "ca": 0.76,
+    "tp": 20.0
+  }
+}

@@ -2,7 +2,7 @@
 
 Software local de apoio à conferência de projetos arquitetônicos (casas de até 2 pavimentos em condomínio horizontal, Brasil). Lê PDFs (pranchas, matrícula, escritura, memorial, leis, normas de condomínio), compara valores e gera relatório versionado (R00, R01…) para o autor do projeto.
 
-Documentação de referência: `docs/01-viabilidade.md` · `docs/02-mvp.md` · `docs/03-arquitetura.md` · `docs/04-plano-de-fases.md` · `docs/05-avaliacao.md`.
+Documentação de referência: `docs/01-viabilidade.md` · `docs/02-mvp.md` · `docs/03-arquitetura.md` · `docs/04-plano-de-fases.md` · `docs/05-avaliacao.md` · `docs/06-calibracao-exemplos-reais.md`.
 
 ---
 
@@ -19,7 +19,7 @@ Documentação de referência: `docs/01-viabilidade.md` · `docs/02-mvp.md` · `
 
 - **Documentos reais nunca entram no repositório** (público). Eles ficam em `dados_privados/` (ignorada pelo Git).
 - **Antes de CADA commit:** rodar `git status` e `git diff --cached --name-only`, conferir a lista e confirmar que não há PDF/imagem/DOCX fora de `dados_sinteticos/` ou `tests/fixtures/`, nada de `dados_privados/`, nenhum `.db`/`.sqlite`, nenhum arquivo grande. O gancho *pre-commit* (Fase 1) faz isso automaticamente — **nunca** usar `--no-verify` nem `git add -f` em arquivos ignorados.
-- Não ler o conteúdo de `dados_privados/` sem pedido explícito do usuário. Para documentos reais, preferir scripts que mostram **apenas estatísticas agregadas**.
+- Não ler o conteúdo de `dados_privados/` sem pedido explícito do usuário. Lembrar que tudo o que o Claude Code lê é enviado à Anthropic. Para documentos reais, usar só estatísticas (`scripts/diagnosticar_pdfs.py`) ou a versão mascarada (`scripts/mascarar_pdf.py`) conferida pelo usuário. Exemplos de calibração (`dados_privados/desenvolvimento/`) nunca são usados como gabarito; o conjunto original fica reservado para a validação final.
 - Nunca copiar trechos de documentos reais para código, testes, *prompts*, documentação, mensagens de commit ou issues.
 - Todo processamento é **local**: nenhuma chamada a APIs/serviços externos com conteúdo de documentos. Ollama só em `127.0.0.1`. Interface só em `127.0.0.1`.
 - Logs não gravam conteúdo de documentos.

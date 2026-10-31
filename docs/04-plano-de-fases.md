@@ -13,7 +13,7 @@
 | 0 | Planejamento | — | Estes documentos, `CLAUDE.md`, `.gitignore`, pastas ✅ |
 | 1 | Ambiente e proteção | 1–2 | `pip` funcionando, Tesseract, esqueleto do projeto, anti-vazamento, repositório no GitHub ✅ (30/10/2026) |
 | 2 | Modelo de dados e gabarito | 2–3 | Classes de domínio + formato JSON do gabarito + normalizador de números ✅ (30/10/2026) |
-| 3 | Base sintética I — pranchas | 3–4 | Gerador de pranchas vetoriais variadas + diagnóstico dos PDFs reais |
+| 3 | Base sintética I — pranchas | 3–4 | Gerador de pranchas vetoriais variadas + diagnóstico dos PDFs reais ✅ (30/10/2026) |
 | 4 | Base sintética II — escaneados, memoriais, leis, revisões | 3–4 | Matrículas/escrituras "escaneadas", memoriais, leis, normas, conjunto R00/R01 |
 | 5 | Ingestão e OCR | 2–3 | Qualquer PDF → páginas com palavras, coordenadas e confiança |
 | 6 | Extração das pranchas | 4–6 | Carimbo, quadro de áreas, recuos rotulados, identificação |
@@ -80,10 +80,11 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 5. **Diagnóstico dos PDFs reais** (`scripts/diagnosticar_pdfs.py`): roda na sua máquina e mostra **apenas estatísticas** (nº de páginas, % de texto extraível, fontes usadas, se há texto como geometria) — sem conteúdo. Mitiga o risco R1.
 
 **Critérios de aceite**
-- [ ] ≥ 6 conjuntos de pranchas com layouts visivelmente diferentes (você abre e confere).
-- [ ] Texto das pranchas é selecionável no leitor de PDF.
-- [ ] Cada conjunto tem gabarito válido.
-- [ ] Diagnóstico dos reais executado; você me diz o resultado (ou eu leio, se você permitir) e decidimos se R1 se confirma.
+- [x] ≥ 6 conjuntos de pranchas com layouts visivelmente diferentes (8 gerados, conferidos pelo usuário; realismo ampliado após a crítica dele: paredes, esquadrias, escada, cobertura, passeio, cotas encadeadas, distrações numéricas).
+- [x] O texto das pranchas é selecionável e os acentos e o "m²" saem corretos (fonte TrueType embutida, verificado por teste).
+- [x] Cada conjunto tem gabarito válido (verificado por teste).
+- [x] Diagnóstico dos reais executado. O R1 se confirmou em parte: há texto SHX em traços, mas recuperável pelos comentários do PDF (docs/01-viabilidade.md §6.1).
+- [x] Extra: mascaramento (`scripts/mascarar_pdf.py`) e calibração com 2 exemplos reais (docs/06-calibracao-exemplos-reais.md).
 
 ---
 
@@ -95,6 +96,17 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 4. ≥ 2 "leis municipais" fictícias completas (20–60 páginas, com zonas, tabela de parâmetros em anexo, exceções) e ≥ 2 regulamentos de condomínio, com valores conflitantes de propósito.
 5. **Projeto com R00 e R01** (R01 corrige parte dos erros, mantém outros e introduz 1 novo).
 6. Pelo menos 1 conjunto "limpo" (sem erros) para medir falsos alarmes.
+7. Variações vindas da calibração com exemplos reais (docs/06-calibracao-exemplos-reais.md §4):
+   - texto em comentários (SHX) e texto como traços;
+   - carimbo e quadro de áreas com valores em comentários e rótulos quebrados;
+   - ponto decimal, notação `A=`/`H=`/`C=` e códigos `%%%`;
+   - recuos sem rótulo;
+   - `MURO H=`;
+   - lotes vizinhos com área;
+   - rosa dos ventos girada, com "E";
+   - folha "N de M";
+   - capa e folhas sem texto;
+   - revisão em branco.
 
 **Critérios de aceite**
 - [ ] ≥ 8 conjuntos completos, todos com gabarito válido.

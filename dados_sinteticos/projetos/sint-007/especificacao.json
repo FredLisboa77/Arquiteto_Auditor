@@ -1,0 +1,106 @@
+{
+  "semente": 107,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA PACHECO",
+    "autor": "Laís Mendes Teixeira",
+    "registro_autor": "CAU A232968-7",
+    "rrt": "15183888",
+    "revisao": "R00",
+    "endereco": "Alameda das Hortênsias, 567",
+    "lote": "8",
+    "quadra": "E",
+    "condominio": "Jardins do Pinto",
+    "municipio": "Nova da Cruz",
+    "matricula": "77.190",
+    "cartorio": "2º Ofício de Registro de Imóveis de Nova da Cruz",
+    "proprietario": "Ana Luiza Carvalho Lima",
+    "cpf_proprietario": "904.532.932-89",
+    "escritorio": "Ateliê Nogueira Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.5,
+    "profundidade": 32.0
+  },
+  "edificacao": {
+    "largura": 8.5,
+    "profundidade": 16.47,
+    "recuo_frontal": 4.5,
+    "recuo_lateral_e": 2.0,
+    "areas_pavimentos": [
+      140.0,
+      112.0
+    ],
+    "altura": 6.5,
+    "muro_altura": 2.0,
+    "area_permeavel": 80.0
+  },
+  "prefeitura": {
+    "lote_area_min": 200.0,
+    "testada_min": 8.0,
+    "recuo_frontal_min": 4.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 45.0,
+    "ca_max": 1.0,
+    "permeavel_min": 15.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 4.0,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": 40.0,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 2.0
+  },
+  "variacao": {
+    "estilo_carimbo": 2,
+    "estilo_quadro": 0,
+    "formato": "A2",
+    "decimal_ponto": false,
+    "cotas_rotuladas": false,
+    "caixa_alta": false,
+    "arquivo_unico": false,
+    "estilo_software": "autocad",
+    "estilo_norte": "rosa"
+  },
+  "apresentacao": {
+    "area_terreno": 397.7,
+    "area_total": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": false,
+    "cotas_omitidas": [
+      "testada"
+    ],
+    "assinatura_autor": false,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "area_terreno_divergente",
+    "cota_omitida:testada",
+    "sem_norte",
+    "sem_assinatura_autor"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 400.0,
+    "projecao": 140.0,
+    "recuo_lateral_d": 2.0,
+    "recuo_fundos": 11.03,
+    "area_total": 252.0,
+    "to": 35.0,
+    "ca": 0.63,
+    "tp": 20.0
+  }
+}

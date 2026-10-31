@@ -118,6 +118,12 @@ Informado pelo usuário em 30/10/2026. Só tipo e quantidade, sem valores.
 
 ---
 
+## 5.2 Exemplos reais de calibração
+
+Em 30/10/2026, o usuário trouxe dois exemplos reais **sem gabarito**: uma planta baixa e um projeto executivo completo. Eles ficam em `dados_privados/desenvolvimento/` e servem **só para calibrar** as regras de leitura (rótulos, layouts, posição das cotas). Não entram nas métricas.
+
+São examinados apenas pela versão mascarada, gerada por `scripts/mascarar_pdf.py` na máquina do usuário e conferida por ele antes de ser compartilhada: posições e termos técnicos visíveis, dados pessoais mascarados. O conjunto original, com os 11 erros conhecidos, continua reservado para a validação final.
+
 ## 6. Quando a métrica não é atingida
 1. O relatório de avaliação mostra em que **etapa** está a perda (tabela 3.3).
 2. Criamos um caso sintético mínimo que reproduz o problema.

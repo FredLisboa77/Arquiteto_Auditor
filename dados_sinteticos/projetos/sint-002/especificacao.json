@@ -1,0 +1,102 @@
+{
+  "semente": 102,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA PIMENTA",
+    "autor": "Elisa Cavalcante Novaes",
+    "registro_autor": "CAU A197820-2",
+    "rrt": "19301553",
+    "revisao": "R00",
+    "endereco": "Alameda das Hortênsias, 309",
+    "lote": "40",
+    "quadra": "G",
+    "condominio": "Jardins do Rocha",
+    "municipio": "Nova Casa Grande",
+    "matricula": "81.735",
+    "cartorio": "3º Ofício de Registro de Imóveis de Nova Casa Grande",
+    "proprietario": "Luiz Otávio Gomes da Rocha",
+    "cpf_proprietario": "908.898.267-85",
+    "escritorio": "Ateliê Pinto Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.0,
+    "profundidade": 30.0
+  },
+  "edificacao": {
+    "largura": 8.75,
+    "profundidade": 14.4,
+    "recuo_frontal": 5.0,
+    "recuo_lateral_e": 1.75,
+    "areas_pavimentos": [
+      126.0,
+      100.8
+    ],
+    "altura": 7.5,
+    "muro_altura": 2.0,
+    "area_permeavel": 90.0
+  },
+  "prefeitura": {
+    "lote_area_min": 300.0,
+    "testada_min": 8.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 50.0,
+    "ca_max": 1.0,
+    "permeavel_min": 20.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": 45.0,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 2.2
+  },
+  "variacao": {
+    "estilo_carimbo": 1,
+    "estilo_quadro": 1,
+    "formato": "A2",
+    "decimal_ponto": true,
+    "cotas_rotuladas": true,
+    "caixa_alta": true,
+    "arquivo_unico": false,
+    "estilo_software": "revit",
+    "estilo_norte": "seta"
+  },
+  "apresentacao": {
+    "area_terreno": 357.7,
+    "area_total": null,
+    "to_declarada": null,
+    "matricula": "81.753",
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "area_terreno_divergente",
+    "matricula_divergente"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 360.0,
+    "projecao": 126.0,
+    "recuo_lateral_d": 1.5,
+    "recuo_fundos": 10.6,
+    "area_total": 226.8,
+    "to": 35.0,
+    "ca": 0.63,
+    "tp": 25.0
+  }
+}

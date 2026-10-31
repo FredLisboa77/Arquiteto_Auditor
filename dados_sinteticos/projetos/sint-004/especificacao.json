@@ -1,0 +1,103 @@
+{
+  "semente": 104,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA SIQUEIRA",
+    "autor": "Rafael Gonçalves Farias",
+    "registro_autor": "CAU A129339-6",
+    "rrt": "15547257",
+    "revisao": "R00",
+    "endereco": "Rua das Palmeiras, 836",
+    "lote": "2",
+    "quadra": "C",
+    "condominio": "Residencial Costa",
+    "municipio": "Vila Almeida",
+    "matricula": "96.932",
+    "cartorio": "1º Ofício de Registro de Imóveis de Vila Almeida",
+    "proprietario": "Anthony Gabriel Silva Cardoso",
+    "cpf_proprietario": "211.550.394-56",
+    "escritorio": "Oficina Almeida Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.5,
+    "profundidade": 35.0
+  },
+  "edificacao": {
+    "largura": 9.0,
+    "profundidade": 16.04,
+    "recuo_frontal": 5.0,
+    "recuo_lateral_e": 1.5,
+    "areas_pavimentos": [
+      144.36,
+      115.49
+    ],
+    "altura": 7.0,
+    "muro_altura": 2.6,
+    "area_permeavel": 131.25
+  },
+  "prefeitura": {
+    "lote_area_min": 250.0,
+    "testada_min": 10.0,
+    "recuo_frontal_min": 4.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 3.0,
+    "to_max": 45.0,
+    "ca_max": 1.0,
+    "permeavel_min": 20.0,
+    "altura_max": 9.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 4.0,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": 40.0,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 2.2
+  },
+  "variacao": {
+    "estilo_carimbo": 3,
+    "estilo_quadro": 3,
+    "formato": "A1",
+    "decimal_ponto": false,
+    "cotas_rotuladas": true,
+    "caixa_alta": true,
+    "arquivo_unico": false,
+    "estilo_software": "revit",
+    "estilo_norte": "seta"
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": false,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": false,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "sem_assinatura_proprietario",
+    "sem_proprietario",
+    "muro_alto"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 437.5,
+    "projecao": 144.36,
+    "recuo_lateral_d": 2.0,
+    "recuo_fundos": 13.96,
+    "area_total": 259.85,
+    "to": 33.0,
+    "ca": 0.59,
+    "tp": 30.0
+  }
+}

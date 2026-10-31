@@ -1,0 +1,106 @@
+{
+  "semente": 103,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA SILVEIRA",
+    "autor": "Pedro Sales Barbosa",
+    "registro_autor": "CAU A122670-1",
+    "rrt": "12045469",
+    "revisao": "R00",
+    "endereco": "Travessa dos Flamboyants, 921",
+    "lote": "22",
+    "quadra": "B",
+    "condominio": "Jardins do Marques",
+    "municipio": "Campo Silva",
+    "matricula": "92.288",
+    "cartorio": "2º Ofício de Registro de Imóveis de Campo Silva",
+    "proprietario": "Joaquim Rezende Garcia",
+    "cpf_proprietario": "123.900.312-92",
+    "escritorio": "Oficina Martins Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.5,
+    "profundidade": 35.0
+  },
+  "edificacao": {
+    "largura": 8.5,
+    "profundidade": 20.59,
+    "recuo_frontal": 5.5,
+    "recuo_lateral_e": 2.0,
+    "areas_pavimentos": [
+      175.01,
+      140.01
+    ],
+    "altura": 6.5,
+    "muro_altura": 1.8,
+    "area_permeavel": 100.62
+  },
+  "prefeitura": {
+    "lote_area_min": 250.0,
+    "testada_min": 12.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 50.0,
+    "ca_max": 1.0,
+    "permeavel_min": 15.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": null,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": null,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 1.8
+  },
+  "variacao": {
+    "estilo_carimbo": 2,
+    "estilo_quadro": 2,
+    "formato": "A3",
+    "decimal_ponto": true,
+    "cotas_rotuladas": false,
+    "caixa_alta": false,
+    "arquivo_unico": false,
+    "estilo_software": "layout",
+    "estilo_norte": "seta"
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": false,
+    "cotas_omitidas": [
+      "recuo_fundos",
+      "altura_total"
+    ],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "cota_omitida:recuo_fundos",
+    "cota_omitida:altura_total",
+    "sem_norte"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 437.5,
+    "projecao": 175.01,
+    "recuo_lateral_d": 2.0,
+    "recuo_fundos": 8.91,
+    "area_total": 315.02,
+    "to": 40.0,
+    "ca": 0.72,
+    "tp": 23.0
+  }
+}

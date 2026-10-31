@@ -113,6 +113,23 @@ Escala: 🟢 fácil/maduro · 🟡 exige cuidado · 🔴 difícil (precisa de co
 
 ---
 
+## 6.1 Resultado do diagnóstico das pranchas reais (Fase 3, 30/10/2026)
+
+`scripts/diagnosticar_pdfs.py` rodou nos 5 PDFs reais e mostrou só estatísticas. **O risco R1 se confirmou em parte:**
+
+- Todos têm texto selecionável com fontes TrueType embutidas (Type0), entre 558 e 2.097 caracteres por folha, e 2 assinaturas digitais cada.
+- Nas três pranchas A1, **96% a 99% dos elementos de desenho são traços com até 4 mm**, típicos de texto em fonte SHX convertido em linhas. São de 16 mil a 195 mil traços por folha.
+- A quantidade de números como texto varia muito: 130 e 111 em duas pranchas e **apenas 6** em outra. Nesta última, as cotas estão quase certamente desenhadas como linhas.
+- As pranchas do AutoCAD têm de 3 a 226 comentários do tipo "Square". Quando a opção correspondente está ligada na exportação, o AutoCAD guarda o texto SHX em comentários invisíveis. **Se for o caso, as cotas podem ser lidas com exatidão a partir deles, sem OCR.** A versão 3 do diagnóstico conta quantos comentários têm texto, para confirmar.
+
+**Estratégia decorrente** (ordem de preferência):
+1. Texto selecionável.
+2. Texto dos comentários SHX, com a posição do comentário.
+3. OCR da região renderizada em alta resolução, com confiança baixa e confirmação do revisor.
+4. Se nada funcionar, item "não foi possível verificar", com orientação ao autor: exportar o PDF com fontes TrueType, ou com a opção do AutoCAD que inclui o texto SHX como comentário.
+
+A base sintética passará a ter conjuntos com texto como desenho e com texto em comentários (Fase 4).
+
 ## 7. O que **não** é viável (ou não vale a pena) agora
 
 - **Interpretar desenhos sem texto** (medir recuos na geometria, reconhecer paredes). Você confirmou que as medidas aparecem escritas — isso fica fora.

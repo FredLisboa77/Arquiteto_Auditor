@@ -1,0 +1,105 @@
+{
+  "semente": 105,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA PACHECO",
+    "autor": "Henrique Abreu das Neves",
+    "registro_autor": "CAU A66847-0",
+    "rrt": "15238161",
+    "revisao": "R00",
+    "endereco": "Avenida das Orquídeas, 177",
+    "lote": "23",
+    "quadra": "C",
+    "condominio": "Condomínio Ferreira",
+    "municipio": "Serra Pastor",
+    "matricula": "77.116",
+    "cartorio": "1º Ofício de Registro de Imóveis de Serra Pastor",
+    "proprietario": "Sabrina Vargas Oliveira",
+    "cpf_proprietario": "165.269.677-64",
+    "escritorio": "Ateliê Farias Arquitetura"
+  },
+  "terreno": {
+    "testada": 15.0,
+    "profundidade": 35.0
+  },
+  "edificacao": {
+    "largura": 11.25,
+    "profundidade": 14.0,
+    "recuo_frontal": 5.0,
+    "recuo_lateral_e": 1.75,
+    "areas_pavimentos": [
+      157.5,
+      126.0
+    ],
+    "altura": 6.5,
+    "muro_altura": 2.2,
+    "area_permeavel": 131.25
+  },
+  "prefeitura": {
+    "lote_area_min": 250.0,
+    "testada_min": 8.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 45.0,
+    "ca_max": 1.0,
+    "permeavel_min": 20.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": null,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": null,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 2.2
+  },
+  "variacao": {
+    "estilo_carimbo": 0,
+    "estilo_quadro": 2,
+    "formato": "A2",
+    "decimal_ponto": true,
+    "cotas_rotuladas": true,
+    "caixa_alta": false,
+    "arquivo_unico": true,
+    "estilo_software": "layout",
+    "estilo_norte": "rosa"
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": 293.5,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {
+      "1": "R01"
+    },
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": true
+  },
+  "erros": [
+    "assinatura_alterada",
+    "soma_areas_errada",
+    "revisao_divergente"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 525.0,
+    "projecao": 157.5,
+    "recuo_lateral_d": 2.0,
+    "recuo_fundos": 16.0,
+    "area_total": 283.5,
+    "to": 30.0,
+    "ca": 0.54,
+    "tp": 25.0
+  }
+}
