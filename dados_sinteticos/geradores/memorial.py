@@ -182,7 +182,7 @@ def gerar_memorial_pdf(memorial: Memorial) -> bytes:
     doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=25 * mm, rightMargin=20 * mm,
                             topMargin=20 * mm, bottomMargin=20 * mm,
                             title="MEMORIAL DESCRITIVO - DOCUMENTO FICTÍCIO",
-                            author=memorial.autor)
+                            author=memorial.autor, invariant=True)  # bytes reprodutíveis
     elementos = [Paragraph("MEMORIAL DESCRITIVO", _TITULO),
                  Paragraph(AVISO_FICTICIO, _CENTRO), Spacer(1, 6 * mm)]
     for secao in memorial.secoes:

@@ -26,6 +26,7 @@ from dados_sinteticos.geradores.especificacao import (
     Projeto,
     aplicar_erros,
     como_dicionario,
+    comparar_rodadas,
     gerar_gabarito,
     gerar_projeto_base,
 )
@@ -59,6 +60,8 @@ class DefinicaoConjunto:
     escritura: str = "boa"  # qualidade do escaneamento
     memorial: str = "texto"  # "texto" (digitado e assinado digitalmente) ou qualidade do escaneado
     norma: str = "texto"  # norma do condomínio: "texto" ou qualidade do escaneado
+    rodada: str = "R00"  # revisão do projeto (R01 = mesmo projeto, corrigido)
+    conjunto_anterior: str | None = None  # conjunto da rodada anterior (para R01)
 
 
 CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
@@ -94,11 +97,23 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
         "sint-008", 108, ("to_declarada_errada", "matricula_divergente", "muro_alto"),
         {"estilo_carimbo": 3, "estilo_quadro": 1, "formato": "A3", "decimal_ponto": True},
         reservado=True, matricula=("ficha", "boa"), escritura="media", memorial="ruim"),
+    # Mesmo projeto em duas revisões: a R01 corrige a matrícula e o memorial (resolvidos),
+    # mantém a TO e o muro (pendentes) e passa a omitir a cota de altura (novo).
+    DefinicaoConjunto(
+        "sint-009", 109,
+        ("matricula_divergente", "to_excedida", "memorial_area_divergente", "muro_alto"),
+        {"estilo_carimbo": 1, "estilo_quadro": 0, "formato": "A2", "arquivo_unico": True}),
+    DefinicaoConjunto(
+        "sint-010", 109, ("to_excedida", "muro_alto", "cota_omitida:altura_total"),
+        {"estilo_carimbo": 1, "estilo_quadro": 0, "formato": "A2", "arquivo_unico": True},
+        rodada="R01", conjunto_anterior="sint-009"),
 )
 
 
 def montar_projeto(definicao: DefinicaoConjunto) -> Projeto:
-    projeto = aplicar_erros(gerar_projeto_base(definicao.semente), list(definicao.erros))
+    base = gerar_projeto_base(definicao.semente)
+    base.identificacao.revisao = definicao.rodada
+    projeto = aplicar_erros(base, list(definicao.erros))
     projeto.variacao = dataclasses.replace(projeto.variacao, **definicao.variacao)
     return projeto
 
@@ -152,7 +167,7 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
         verdade_ocr["norma_condominio.pdf"] = doc_norma.texto_por_pagina
     _gravar_json(pasta / "verdade_ocr.json", verdade_ocr)
 
-    gabarito = _completar_gabarito(gerar_gabarito(projeto, definicao.conjunto), matricula,
+    gabarito = _completar_gabarito(gerar_gabarito_do_conjunto(definicao, projeto), matricula,
                                    escritura, lei)
     gabarito.reservado_avaliacao = definicao.reservado
     _gravar_json(pasta / "gabarito.json", {"$schema": ESQUEMA_RELATIVO} | gabarito.model_dump(
@@ -166,6 +181,21 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
     }
     _gravar_json(pasta / "especificacao.json", especificacao)
     return pasta
+
+
+def gerar_gabarito_do_conjunto(definicao: DefinicaoConjunto,
+                               projeto: Projeto | None = None) -> Gabarito:
+    """Gabarito do conjunto; numa revisão (R01), inclui a comparação com a rodada anterior."""
+    projeto = projeto or montar_projeto(definicao)
+    gabarito = gerar_gabarito(projeto, definicao.conjunto, definicao.rodada,
+                              definicao.conjunto_anterior)
+    if not definicao.conjunto_anterior:
+        return gabarito
+    anterior = next(d for d in CONJUNTOS if d.conjunto == definicao.conjunto_anterior)
+    dados = gabarito.model_dump(by_alias=True)
+    dados["comparacao_rodada_anterior"] = comparar_rodadas(
+        gerar_gabarito_do_conjunto(anterior), gabarito)
+    return Gabarito.model_validate(dados)
 
 
 def _gravar_json(caminho: Path, dados: dict) -> None:

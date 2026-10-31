@@ -89,3 +89,73 @@ def test_base_varia_estilo_e_qualidade_dos_escaneados():
     assert qualidades == {"boa", "media", "ruim"}
     # o caso típico (escaneamento de mesa limpo) é a maioria
     assert sum(d.escritura == "boa" for d in CONJUNTOS) >= len(CONJUNTOS) // 2
+
+
+# ---------------------------------------------------------------- revisões R00 → R01
+
+
+def _definicao(nome):
+    return next(d for d in CONJUNTOS if d.conjunto == nome)
+
+
+def test_comparar_rodadas_classifica_cada_situacao():
+    from arquiteto_auditor.avaliacao.gabarito import Gabarito
+    from dados_sinteticos.geradores.especificacao import comparar_rodadas
+
+    def gabarito(rodada, itens, anterior=None):
+        return Gabarito.model_validate({
+            "conjunto": f"x-{rodada.lower()}", "versao_gabarito": 1, "rodada": rodada,
+            "conjunto_anterior": anterior,
+            "itens_esperados": [{"chave": c, "status": s} for c, s in itens]})
+
+    r00 = gabarito("R00", [("ID_MATRICULA", "divergente"), ("TO_MAX", "nao_atende"),
+                           ("ALTURA_MAX", "atende"), ("NORTE_INDICADO", "atende"),
+                           ("RECUO_FRONTAL", "atende")])
+    r01 = gabarito("R01", [("ID_MATRICULA", "atende"), ("TO_MAX", "nao_atende"),
+                           ("ALTURA_MAX", "nao_verificavel"), ("NORTE_INDICADO", "nao_atende"),
+                           ("RECUO_FRONTAL", "atende")], anterior="x-r00")
+    assert comparar_rodadas(r00, r01) == [
+        {"chave": "ID_MATRICULA", "resultado": "resolvido"},
+        {"chave": "TO_MAX", "resultado": "pendente"},
+        {"chave": "ALTURA_MAX", "resultado": "nao_verificavel_agora"},
+        {"chave": "NORTE_INDICADO", "resultado": "novo"},
+    ]
+
+
+def test_r01_e_o_mesmo_projeto_que_r00_com_parte_dos_erros_corrigida():
+    r00, r01 = _definicao("sint-009"), _definicao("sint-010")
+    assert r01.rodada == "R01" and r01.conjunto_anterior == r00.conjunto
+    p00, p01 = montar_projeto(r00), montar_projeto(r01)
+    for campo in ("matricula", "lote", "quadra", "condominio", "titulo", "municipio"):
+        assert getattr(p00.identificacao, campo) == getattr(p01.identificacao, campo)
+    assert (p00.identificacao.revisao, p01.identificacao.revisao) == ("R00", "R01")
+    corrigidos = set(r00.erros) - set(r01.erros)
+    mantidos = set(r00.erros) & set(r01.erros)
+    novos = set(r01.erros) - set(r00.erros)
+    assert corrigidos and mantidos and len(novos) == 1
+
+
+def test_gabarito_da_r01_traz_todos_os_resultados_de_comparacao():
+    from dados_sinteticos.geradores.gerar_base import gerar_gabarito_do_conjunto
+
+    gabarito = gerar_gabarito_do_conjunto(_definicao("sint-010"))
+    resultados = {c.resultado.value for c in gabarito.comparacao_rodada_anterior}
+    assert resultados == {"resolvido", "pendente", "novo", "nao_verificavel_agora"}
+    assert gabarito.conjunto_anterior == "sint-009" and gabarito.rodada == "R01"
+
+
+def test_documentos_nao_assinados_tem_bytes_reprodutiveis():
+    """Regerar a base não deve mudar arquivos cujo conteúdo não mudou (histórico do Git)."""
+    from dados_sinteticos.geradores.especificacao import gerar_projeto_base
+    from dados_sinteticos.geradores.legislacao import gerar_lei, gerar_pdf_normativo
+    from dados_sinteticos.geradores.memorial import gerar_memorial, gerar_memorial_pdf
+    from dados_sinteticos.geradores.registro import gerar_matricula_escaneada
+
+    projeto = gerar_projeto_base(101)
+
+    def gerar():
+        return (gerar_pdf_normativo(gerar_lei(projeto).documento),
+                gerar_memorial_pdf(gerar_memorial(projeto)),
+                gerar_matricula_escaneada(projeto, "ruim")[1].pdf)
+
+    assert gerar() == gerar()

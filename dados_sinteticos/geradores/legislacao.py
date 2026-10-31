@@ -697,7 +697,8 @@ def _mapa_zoneamento(semente: int, largura: float) -> Drawing:
 def gerar_pdf_normativo(documento: DocumentoNormativo) -> bytes:
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=25 * mm, rightMargin=20 * mm,
-                            topMargin=20 * mm, bottomMargin=20 * mm, title=documento.titulo)
+                            topMargin=20 * mm, bottomMargin=20 * mm, title=documento.titulo,
+                            invariant=True)  # bytes reprodutíveis (sem data e ID aleatório)
     elementos = []
     largura = A4[0] - 45 * mm
     for bloco in documento.blocos:

@@ -1,0 +1,135 @@
+{
+  "semente": 109,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA MARQUES",
+    "autor": "Manuella Novaes Araújo",
+    "registro_autor": "CAU A245952-8",
+    "rrt": "10969117",
+    "revisao": "R01",
+    "endereco": "Rua dos Jacarandás, 524",
+    "lote": "32",
+    "quadra": "E",
+    "condominio": "Residencial da Conceição",
+    "municipio": "Porto da Mota",
+    "matricula": "61.198",
+    "cartorio": "3º Ofício de Registro de Imóveis de Porto da Mota",
+    "proprietario": "Guilherme da Conceição Montenegro",
+    "cpf_proprietario": "813.784.624-74",
+    "escritorio": "Oficina Monteiro Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.0,
+    "profundidade": 35.0
+  },
+  "edificacao": {
+    "largura": 9.0,
+    "profundidade": 24.28,
+    "recuo_frontal": 4.0,
+    "recuo_lateral_e": 1.5,
+    "areas_pavimentos": [
+      218.52,
+      174.82
+    ],
+    "altura": 7.5,
+    "muro_altura": 2.4,
+    "area_permeavel": 105.0
+  },
+  "prefeitura": {
+    "lote_area_min": 200.0,
+    "testada_min": 12.0,
+    "recuo_frontal_min": 4.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 3.0,
+    "to_max": 50.0,
+    "ca_max": 1.0,
+    "permeavel_min": 15.0,
+    "altura_max": 9.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": null,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": null,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 2.0
+  },
+  "variacao": {
+    "estilo_carimbo": 1,
+    "estilo_quadro": 0,
+    "formato": "A2",
+    "decimal_ponto": true,
+    "cotas_rotuladas": false,
+    "caixa_alta": true,
+    "arquivo_unico": true,
+    "estilo_software": "layout",
+    "estilo_norte": "seta"
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "area_total_memorial": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [
+      "altura_total"
+    ],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "to_excedida",
+    "muro_alto",
+    "cota_omitida:altura_total"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 420.0,
+    "projecao": 218.52,
+    "recuo_lateral_d": 1.5,
+    "recuo_fundos": 6.72,
+    "area_total": 393.34,
+    "to": 52.03,
+    "ca": 0.94,
+    "tp": 25.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 420.0,
+      "proprietario_atual": "Guilherme da Conceição Montenegro",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (30/08/2015)",
+        "R-2 ALIENAÇÃO FIDUCIÁRIA (23/10/2016)",
+        "AV-3 CANCELAMENTO (22/09/2018)",
+        "AV-4 ALTERAÇÃO DE DENOMINAÇÃO (11/12/2019)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-1",
+      "data": "18/10/2014",
+      "valor": 790000,
+      "area_descrita": 420.0,
+      "area_diferente_da_atual": false
+    }
+  },
+  "legislacao": {
+    "lei_modelo": "A",
+    "zona": "ZR-2",
+    "valor_revogado": null,
+    "norma_condominio": "texto"
+  }
+}

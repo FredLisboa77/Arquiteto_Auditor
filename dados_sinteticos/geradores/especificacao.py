@@ -549,6 +549,36 @@ def gerar_gabarito(projeto: Projeto, conjunto: str, rodada: str = "R00",
     })
 
 
+_PROBLEMAS = ("nao_atende", "divergente")
+
+
+def comparar_rodadas(anterior: Gabarito, atual: Gabarito) -> list[dict]:
+    """Comparação esperada entre rodadas (R00 → R01), item a item, pela chave estável.
+
+    - resolvido: era problema e agora atende;
+    - pendente: era problema e continua problema;
+    - novo: não era problema (ou não existia) e agora é;
+    - nao_verificavel_agora: era verificável e agora não é.
+    Itens que atendiam e continuam atendendo não entram na lista.
+    """
+    antes = {(i.chave, i.escopo): i.status.value for i in anterior.itens_esperados}
+    resultado = []
+    for item in atual.itens_esperados:
+        agora, era = item.status.value, antes.get((item.chave, item.escopo))
+        if agora in _PROBLEMAS:
+            situacao = "pendente" if era in _PROBLEMAS else "novo"
+        elif agora == "nao_verificavel":
+            situacao = "nao_verificavel_agora" if era not in (None, "nao_verificavel") else None
+        else:
+            situacao = "resolvido" if era in _PROBLEMAS else None
+        if situacao:
+            comparacao = {"chave": item.chave, "resultado": situacao}
+            if item.escopo:
+                comparacao["escopo"] = item.escopo
+            resultado.append(comparacao)
+    return resultado
+
+
 def como_dicionario(projeto: Projeto) -> dict:
     """Especificação completa em formato JSON (inclui valores derivados, para conferência)."""
     def converter(objeto):

@@ -590,6 +590,6 @@ def gerar_pdf_escaneado(paginas: list[Pagina], qualidade: str | Qualidade, semen
         folha.insert_image(folha.rect, stream=buffer.getvalue())
     documento.set_metadata({"producer": "Scanner fictício (Arquiteto Auditor - dados sintéticos)",
                             "title": "DOCUMENTO FICTÍCIO"})
-    pdf = documento.tobytes(garbage=3, deflate=True)
+    pdf = documento.tobytes(garbage=3, deflate=True, no_new_id=True)  # bytes reprodutíveis
     documento.close()
     return DocumentoEscaneado(pdf, [p.texto for p in paginas], q.inclinacao_max)

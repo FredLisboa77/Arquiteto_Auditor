@@ -33,6 +33,8 @@ As assinaturas digitais usam certificados fictícios gerados na hora. Por isso, 
 | sint-006 | 1 | 3 | A3 | TO excedida; recuo frontal insuficiente; altura excedida |
 | sint-007 🔒 | 2 | 0 | A2 | área divergente; testada sem cota; sem Norte; sem assinatura do autor |
 | sint-008 🔒 | 3 | 1 | A3 | TO declarada errada; matrícula divergente; muro acima do limite |
+| sint-009 (R00) | 1 | 0 | A2 | matrícula divergente; TO excedida; área total do memorial diferente do quadro; muro acima do limite |
+| sint-010 (R01) | 1 | 0 | A2 | revisão da sint-009: TO excedida e muro (mantidos); cota de altura omitida (novo) |
 
 ### Matrícula, escritura, memorial, lei e norma (Fase 4)
 | Conjunto | Matrícula (estilo, qualidade) | Escritura | Memorial | Lei (modelo, zona) | Norma do condomínio | Particularidade |
@@ -45,8 +47,21 @@ As assinaturas digitais usam certificados fictícios gerados na hora. Por isso, 
 | sint-006 | certidão, boa | média | escaneado, boa | B, ZR-1 | texto | 6 atos |
 | sint-007 🔒 | certidão, média | boa | texto | A, ZR-2 | escaneada, ruim | escritura com a área anterior à retificação |
 | sint-008 🔒 | ficha, boa | média | escaneado, ruim | B, ZR-1 | texto | escritura com a área anterior à retificação |
+| sint-009 / sint-010 | certidão, boa | boa | texto | A, ZR-2 | texto | mesmo projeto em duas revisões (documentos registrais idênticos) |
 
 Qualidades do escaneamento: **boa** = escaneamento de mesa limpo (300 dpi, colorido, quase sem inclinação), o caso típico dos exemplos reais; **média** e **ruim** = testes de resistência do OCR (inclinação de até 3°, desbotamento, sujeira, baixa resolução).
+
+### Revisões R00 → R01 (sint-009 → sint-010)
+Mesmo projeto (mesma matrícula, lote, quadra, condomínio e título), reapresentado corrigido. A revisão aparece nas pranchas e no memorial. O gabarito da R01 informa `conjunto_anterior: "sint-009"` e a comparação esperada, item a item:
+
+| Item | R00 | R01 | Comparação |
+|---|---|---|---|
+| `ID_MATRICULA` | divergente | atende | resolvido |
+| `AREA_CONSTR_TOTAL` (memorial × quadro) | divergente | atende | resolvido |
+| `TO_MAX` | não atende | não atende | pendente |
+| `MURO_ALTURA_MAX` | não atende | não atende | pendente |
+| `COTA_INDEFINIDA` (altura total) | — | não atende | novo |
+| `ALTURA_MAX` | atende | não verificável | não verificável agora |
 
 🔒 **Reservados para avaliação** (`reservado_avaliacao: true`): não use estes conjuntos ao desenvolver ou ajustar regras de extração. Eles servem para medir se as regras generalizam (docs/05-avaliacao.md §4).
 
@@ -65,4 +80,5 @@ Qualidades do escaneamento: **boa** = escaneamento de mesa limpo (300 dpi, color
 - O **memorial** é documento do autor: repete os valores das pranchas, inclusive erros e omissões (cota omitida na prancha também não aparece no memorial) e as assinaturas presentes ou ausentes. Traz especificações técnicas com números que não são procurados (fck, pé-direito, caixa d'água, inclinação do telhado, piscina). O erro `memorial_area_divergente` (área total do memorial ≠ quadro) existe, mas ainda não foi usado em nenhum conjunto.
 - A **lei municipal** traz os parâmetros da prefeitura para a zona do lote, no meio de 8 zonas com valores diferentes. A zona do lote é identificável pelo Anexo I (o perímetro dela cita o condomínio) e vai no campo `zona` do gabarito. Modelo **A**: parâmetros num anexo em tabela (uma linha por zona). Modelo **B**: parâmetros em artigos por zona, tabela invertida e um artigo com **redação alterada**, que cita o valor antigo do recuo frontal (armadilha: vale o novo). Há exceções que não se aplicam ao lote (esquina, testada < 10 m, edícula, prédios acima de 2 pavimentos), definições das fórmulas de TO, CA e TP e muitos números de distração (multas, prazos, vias, vagas, ruído).
 - A **norma do condomínio** define a altura do muro (só ela define) e às vezes repete ou endurece parâmetros da prefeitura. Quando a TO do condomínio é menor que a da lei, há **conflito de propósito**: vale a prefeitura e o valor do condomínio vira observação. Distrações: gradil de 1,20 m, tapume de 2,20 m, calçada de 1,50 m, horário e prazo de obra.
-- O projeto com revisões R00/R01 e as variações de prancha do doc 06 §4 ainda serão acrescentados na Fase 4.
+- As variações de prancha do doc 06 §4 ainda serão acrescentadas na Fase 4.
+- Os documentos sem assinatura digital têm bytes reprodutíveis: regerar a base só muda os arquivos assinados (pranchas e memoriais digitados), porque os certificados fictícios são criados na hora.
