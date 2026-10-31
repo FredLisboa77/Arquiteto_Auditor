@@ -24,7 +24,10 @@ class DefinicaoVerificacao(BaseModel):
     nome: str = Field(min_length=1)
     tipo: Literal["identificacao", "consistencia", "parametro", "aritmetica", "completude"]
     descricao: str = Field(min_length=1)
-    escopo: Literal["pavimento", "elemento"] | None = None
+    escopo: Literal["pavimento", "elemento", "posicao"] | None = None
+    # Escopo opcional: o item pode aparecer uma vez (sem escopo) ou um por escopo. Permite
+    # detalhar um item existente sem invalidar gabaritos antigos (chaves estáveis).
+    escopo_opcional: bool = False
 
 
 def carregar_catalogo(arquivo: Path = CATALOGO_PADRAO) -> dict[str, DefinicaoVerificacao]:

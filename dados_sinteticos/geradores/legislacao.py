@@ -18,6 +18,7 @@ obra, exceções que não se aplicam (lote de esquina, testada pequena) e as out
 from __future__ import annotations
 
 import io
+import math
 import random
 from dataclasses import dataclass, field
 from datetime import date
@@ -90,12 +91,14 @@ class Bloco:
     tipo: str  # "titulo", "subtitulo", "ementa", "capitulo", "artigo", "item", "tabela", "quebra"
     texto: str = ""
     linhas: list[list[str]] = field(default_factory=list)  # tabela: 1ª linha = cabeçalho
+    mescladas: list[tuple[int, int, int, int]] = field(default_factory=list)  # (col, lin, col, lin)
 
 
 @dataclass
 class DocumentoNormativo:
     titulo: str
     blocos: list[Bloco]
+    timbre: list[str] = field(default_factory=list)  # papel timbrado: brasão + estas linhas
 
 
 def _romano(numero: int) -> str:
@@ -119,8 +122,8 @@ class _Redator:
         self.capitulos += 1
         self.bloco("capitulo", f"CAPÍTULO {_romano(self.capitulos)} - {nome}")
 
-    def bloco(self, tipo: str, texto: str = "", linhas=None) -> None:
-        self.blocos.append(Bloco(tipo, texto, linhas or []))
+    def bloco(self, tipo: str, texto: str = "", linhas=None, mescladas=None) -> None:
+        self.blocos.append(Bloco(tipo, texto, linhas or [], mescladas or []))
 
     def artigo(self, texto: str, itens: list[str] = ()) -> int:
         self.numero += 1
@@ -141,6 +144,7 @@ class LeiMunicipal:
     zona: str  # código da zona do lote do projeto
     parametros_por_zona: dict[str, dict[str, float]]
     valor_antigo: tuple[str, float] | None = None  # (campo, valor revogado) no modelo B
+    limiar_area: float | None = None  # modelo C: parâmetros por faixa de área do lote
 
 
 def _parametros_das_zonas(projeto: Projeto, zona: str,
@@ -367,12 +371,13 @@ def _anexo_atividades(rng: random.Random) -> list[list[str]]:
     return linhas
 
 
-def gerar_lei(projeto: Projeto) -> LeiMunicipal:
+def gerar_lei(projeto: Projeto, modelo: str | None = None) -> LeiMunicipal:
+    """Modelo "A" ou "B" (padrão: pela semente) ou "C" (código de obras escaneado, docs/06 §6)."""
     rng = random.Random(projeto.semente * 83)
     fake = Faker("pt_BR")
     fake.seed_instance(projeto.semente * 83)
     ident = projeto.identificacao
-    modelo = "A" if projeto.semente % 2 else "B"
+    modelo = modelo or ("A" if projeto.semente % 2 else "B")
     zona = rng.choice(ZONAS_RESIDENCIAIS)
     tabela = _parametros_das_zonas(projeto, zona, rng)
     numero_lei, ano = rng.randint(100, 499), rng.randint(2012, 2022)
@@ -380,7 +385,7 @@ def gerar_lei(projeto: Projeto) -> LeiMunicipal:
     prefeito = f"{fake.first_name()} {fake.last_name()}"
 
     r = _Redator()
-    tipo = "LEI COMPLEMENTAR" if modelo == "A" else "LEI"
+    tipo = "LEI" if modelo == "B" else "LEI COMPLEMENTAR"
     r.bloco("titulo", f"PREFEITURA MUNICIPAL DE {ident.municipio.upper()}")
     r.bloco("subtitulo", AVISO_FICTICIO)
     r.bloco("titulo", f"{tipo} Nº {numero_lei}, DE {data.upper()}")
@@ -401,8 +406,12 @@ def gerar_lei(projeto: Projeto) -> LeiMunicipal:
     r.artigo("O território urbano fica dividido nas zonas abaixo, cujos perímetros estão "
              "descritos no Anexo I:",
              [f"{codigo} - {nome}: {descricao};" for codigo, nome, descricao in ZONAS])
-    artigo_anexo = r.artigo("Os parâmetros urbanísticos de cada zona são os constantes do "
-                            "Anexo II desta Lei.")
+    if modelo == "C":
+        artigo_anexo = r.artigo("Os parâmetros urbanísticos variam conforme a zona e a área do "
+                                "lote, nos termos do Anexo II desta Lei.")
+    else:
+        artigo_anexo = r.artigo("Os parâmetros urbanísticos de cada zona são os constantes do "
+                                "Anexo II desta Lei.")
     for codigo, nome, descricao in ZONAS:
         r.artigo(f"A {nome} ({codigo}) destina-se predominantemente a {descricao}, sendo "
                  f"admitidas as atividades classificadas como permitidas (P) ou permissíveis "
@@ -431,6 +440,11 @@ def gerar_lei(projeto: Projeto) -> LeiMunicipal:
     r.capitulo("DAS DISPOSIÇÕES ESPECIAIS DE OCUPAÇÃO")
     r.artigo("Nos lotes de esquina, o recuo frontal mínimo será exigido em uma das testadas, "
              "admitindo-se recuo de 2,00 m (dois metros) na outra.")
+    if modelo == "C":  # tabela pequena no meio do texto (não se aplica ao lote do projeto)
+        r.artigo("Nos lotes de esquina, aplicam-se os seguintes afastamentos mínimos:")
+        r.bloco("tabela", linhas=[
+            ["Testada principal", "Testada secundária", "Laterais", "Fundos"],
+            ["5,00 m", "2,00 m", "1,50 m", "2,00 m"]])
     r.artigo("Nos lotes com testada inferior a 10,00 m (dez metros), o recuo lateral poderá ser "
              "dispensado em um dos lados, desde que não haja aberturas na parede da divisa.")
     r.artigo("A edícula poderá ocupar o recuo de fundos, desde que tenha altura máxima de "
@@ -500,7 +514,12 @@ def gerar_lei(projeto: Projeto) -> LeiMunicipal:
     # Anexo II: parâmetros em tabela
     r.bloco("quebra")
     r.bloco("titulo", "ANEXO II - PARÂMETROS URBANÍSTICOS POR ZONA")
-    if modelo == "A":
+    limiar = None
+    if modelo == "C":
+        limiar, linhas, mescladas = _anexo_por_faixa_de_area(projeto, zona, tabela, rng)
+        r.bloco("tabela", linhas=linhas, mescladas=mescladas)
+        linhas = None
+    elif modelo == "A":
         cabecalho = ["Zona", *[f"{rotulo} ({unidade})" if unidade else rotulo
                                for _, rotulo, unidade in CAMPOS_LEI]]
         linhas = [cabecalho]
@@ -512,7 +531,8 @@ def gerar_lei(projeto: Projeto) -> LeiMunicipal:
         for campo, rotulo, unidade in CAMPOS_LEI:
             linhas.append([f"{rotulo} ({unidade})" if unidade else rotulo,
                            *[_numero_tabela(campo, tabela[c][campo]) for c, _, _ in ZONAS]])
-    r.bloco("tabela", linhas=linhas)
+    if linhas:
+        r.bloco("tabela", linhas=linhas)
     r.bloco("item", f"Notas: (1) ver exceções do Capítulo IV; (2) parâmetros referidos no "
                     f"art. {artigo_anexo}; (3) recuo 0,00 = dispensado.")
 
@@ -537,7 +557,38 @@ def gerar_lei(projeto: Projeto) -> LeiMunicipal:
     r.bloco("mapa", f"{projeto.semente}")
 
     titulo = f"{tipo} {numero_lei}/{ano} - Uso e Ocupação do Solo - {ident.municipio}"
-    return LeiMunicipal(DocumentoNormativo(titulo, r.blocos), modelo, zona, tabela, valor_antigo)
+    timbre = ([f"PREFEITURA MUNICIPAL DE {ident.municipio.upper()}",
+               "SECRETARIA MUNICIPAL DE OBRAS E URBANISMO", AVISO_FICTICIO]
+              if modelo == "C" else [])
+    return LeiMunicipal(DocumentoNormativo(titulo, r.blocos, timbre), modelo, zona, tabela,
+                        valor_antigo, limiar)
+
+
+def _anexo_por_faixa_de_area(projeto: Projeto, zona: str, tabela, rng: random.Random):
+    """Tabela com a zona em células mescladas e duas colunas por faixa de área do lote.
+
+    O lote do projeto cai numa das faixas (pela área real); a outra coluna é distração.
+    """
+    limiar = rng.choice([300.0, 600.0])
+    acima = projeto.terreno.area > limiar
+    cabecalho = ["Zona", "Parâmetro", f"Lotes com área até {formatar_numero(limiar, casas=0)} m²",
+                 f"Lotes com área acima de {formatar_numero(limiar, casas=0)} m²"]
+    linhas, mescladas = [cabecalho], []
+    for codigo, _, _ in ZONAS:
+        inicio = len(linhas)
+        for (campo, rotulo, unidade), opcoes in zip(CAMPOS_LEI, PERFIS_DAS_ZONAS[codigo],
+                                                    strict=True):
+            valor = tabela[codigo][campo]
+            outras = [float(v) for v in opcoes if v != valor] or [round(valor * 0.8, 2)]
+            if codigo == zona:  # na zona do projeto, a outra faixa sempre difere
+                outras = [v for v in outras if v != valor] or [round(valor * 0.8, 2)]
+            alternativo = rng.choice(outras)
+            proprio, outro = _numero_tabela(campo, valor), _numero_tabela(campo, alternativo)
+            colunas = [outro, proprio] if acima else [proprio, outro]
+            nome = f"{rotulo} ({unidade})" if unidade else rotulo
+            linhas.append([codigo if len(linhas) == inicio else "", nome, *colunas])
+        mescladas.append((0, inicio, 0, len(linhas) - 1))
+    return limiar, linhas, mescladas
 
 
 def _numero_tabela(campo: str, valor: float) -> str:
@@ -558,7 +609,10 @@ class NormaCondominio:
     parametros: Parametros
 
 
-def gerar_norma_condominio(projeto: Projeto) -> NormaCondominio:
+def gerar_norma_condominio(projeto: Projeto, modelo: str = "artigos") -> NormaCondominio:
+    """Modelo "artigos" (regulamento de obras) ou "numerada" (itens 1, 2, 3...)."""
+    if modelo == "numerada":
+        return _norma_numerada(projeto)
     rng = random.Random(projeto.semente * 89)
     ident, c = projeto.identificacao, projeto.condominio
     r = _Redator()
@@ -656,6 +710,142 @@ def gerar_norma_condominio(projeto: Projeto) -> NormaCondominio:
     return NormaCondominio(DocumentoNormativo(titulo, r.blocos), c)
 
 
+# ---------------------------------------------------------------- norma numerada
+
+
+def metros_por_extenso(valor: float) -> str:
+    """3.0 → "três metros"; 1.5 → "um metro e meio"; 2.2 → "dois metros e vinte centímetros"."""
+    metros, centimetros = int(valor), round((valor - int(valor)) * 100)
+    if not metros:
+        return f"{por_extenso(centimetros)} centímetros"
+    texto = f"{por_extenso(metros)} metro{'s' if metros > 1 else ''}"
+    if centimetros == 50:
+        return texto + " e meio"
+    if centimetros:
+        texto += f" e {por_extenso(centimetros)} centímetros"
+    return texto
+
+
+def _m(valor: float) -> str:
+    """Estilo das normas reais: ponto decimal e extenso, "3.00 m (três metros)"."""
+    return f"{valor:.2f} m ({metros_por_extenso(valor)})"
+
+
+def _pct(valor: float) -> str:
+    return f"{int(valor)}% ({por_extenso(int(valor))} por cento)"
+
+
+def _norma_numerada(projeto: Projeto) -> NormaCondominio:
+    """Normas construtivas em itens numerados, como o exemplo real (docs/06 §6.3).
+
+    O muro varia com a posição: frente proibida; fundos com a altura máxima do condomínio;
+    laterais baixas no trecho do recuo frontal, subindo a 45° até a altura máxima.
+    """
+    rng = random.Random(projeto.semente * 89)
+    ident, c = projeto.identificacao, projeto.condominio
+    recuo_frontal = c.recuo_frontal_min or projeto.parametro_adotado("recuo_frontal_min")
+    itens: list[tuple[str, str]] = []  # (tipo do bloco, texto)
+    numero = 0
+
+    def item(texto: str, subitens: list[str] = ()) -> None:
+        nonlocal numero
+        numero += 1
+        itens.append(("artigo", f"{numero}. {texto}"))
+        for i, sub in enumerate(subitens, start=1):
+            itens.append(("item", f"{numero}.{i}. {sub}"))
+
+    def secao(romano: str, nome: str) -> None:
+        itens.append(("capitulo", f"{romano}. {nome}"))
+
+    secao("I", "DISPOSIÇÕES GERAIS")
+    item("O objetivo destas normas é a preservação da qualidade ambiental e paisagística do "
+         "condomínio, orientando os proprietários quanto ao uso e à ocupação dos lotes, sem "
+         "prejuízo da legislação municipal, que prevalece em caso de conflito.")
+    item("Os lotes destinam-se exclusivamente ao uso residencial unifamiliar, admitindo-se uma "
+         "única residência por lote.")
+    secao("II", "APROVAÇÃO DE PROJETOS")
+    item("Todos os projetos de construção, reforma e ampliação deverão ser submetidos à "
+         "aprovação prévia do CONDOMÍNIO, antes do protocolo na Prefeitura.")
+    item("O projeto deverá conter plantas de localização e situação, plantas baixas de todos os "
+         "pavimentos, cortes e fachadas, além do memorial descritivo e do RRT ou ART.")
+    item("O prazo máximo para a análise dos projetos é de 15 (quinze) dias úteis, a partir da "
+         "data de protocolo.")
+    item("Após a aprovação, o proprietário deverá entregar 03 (três) cópias impressas dos "
+         "projetos aprovados.")
+
+    secao("III", "PARÂMETROS CONSTRUTIVOS")
+    if c.area_construida_min is not None:
+        minimo = int(c.area_construida_min)
+        item(f"As residências deverão ter área construída de no mínimo "
+             f"{c.area_construida_min:.2f} m² ({por_extenso(minimo)} metros quadrados).")
+    pavimentos = int(c.pavimentos_max or 2)
+    item(f"Serão permitidos, no máximo, {pavimentos:02d} ({por_extenso(pavimentos)}) pavimentos "
+         f"(térreo e superior) acima do nível da rua.")
+    if c.to_max is not None:
+        item(f"A taxa de ocupação não poderá exceder {_pct(c.to_max)} da área total do terreno.")
+    if c.permeavel_min is not None:
+        item(f"A taxa de permeabilidade deverá ser de no mínimo {_pct(c.permeavel_min)} da área "
+             f"total do terreno.")
+    item("A cota de implantação da edificação deverá ser de no mínimo 20 cm (vinte centímetros) "
+         "e no máximo 40 cm (quarenta centímetros) acima do nível do passeio.")
+    if c.altura_max is not None:
+        item(f"A altura máxima da edificação é de {_m(c.altura_max)}, medida a partir do nível "
+             f"do passeio até o ponto mais alto da cobertura, excetuados caixa d'água e casa de "
+             f"máquinas.")
+    recuos = [f"Recuo Frontal: mínimo de {_m(recuo_frontal)} a partir do alinhamento do lote;"]
+    if c.recuo_fundos_min is not None:
+        recuos.append(f"Recuo do Fundo: mínimo de {_m(c.recuo_fundos_min)};")
+    if c.recuo_lateral_min is not None:
+        recuos.append(f"Recuo Lateral: mínimo de {_m(c.recuo_lateral_min)} em pelo menos uma "
+                      f"lateral; nos lotes de esquina, mínimo de 3.00 m (três metros) na face da "
+                      f"esquina.")
+    item("As edificações deverão obedecer aos seguintes recuos mínimos:", recuos)
+    item("As aberturas voltadas para as divisas deverão ter área livre mínima de 1.50 x 1.50 m "
+         "(um metro e meio por um metro e meio).")
+    item("Para beirais, marquises e brises, o recuo mínimo é de 40 cm (quarenta centímetros) "
+         "das divisas laterais e de fundo.")
+
+    secao("IV", "MUROS E FECHAMENTOS")
+    muro = c.muro_altura_max
+    item("O muro perimetral do condomínio tem altura de 2.50 m (dois metros e cinquenta "
+         "centímetros) e não poderá sofrer qualquer alteração.")
+    item("Os fechamentos das divisas de cada lote deverão obedecer ao seguinte:", [
+        "Frente do lote: não poderá ser construído muro, admitindo-se gradil ou cerca viva "
+        "de até 1.20 m (um metro e vinte centímetros);",
+        f"Fundo do lote: muro de {_m(muro)} de altura;",
+        f"Laterais do lote: muro de 80 cm (oitenta centímetros) de altura no trecho do recuo "
+        f"frontal ({recuo_frontal:.2f} m), subindo a partir daí em ângulo de 45° até a altura "
+        f"de {muro:.2f} m;",
+    ])
+
+    secao("V", "EXECUÇÃO DAS OBRAS")
+    item("Durante a obra, o lote deverá ser fechado com tapume de 2,00 m (dois metros) de "
+         "altura em relação ao meio-fio.")
+    item("A calçada deverá ter inclinação máxima de 2% (dois por cento) em direção à rua, sem "
+         "rampas ou degraus.")
+    item(f"O horário das obras é das 7h às 17h, de segunda a sexta-feira; o prazo máximo de "
+         f"conclusão é de {rng.choice([24, 30, 36])} meses.")
+
+    secao("VI", "DISPOSIÇÕES FINAIS")
+    item("Os casos omissos serão resolvidos pela Comissão de Obras, observada a legislação do "
+         "Município, que prevalece sobre estas normas.")
+
+    r = _Redator()
+    r.bloco("titulo", "NORMAS DE OCUPAÇÃO E CONSTRUÇÃO DOS LOTES")
+    r.bloco("titulo", ident.condominio.upper())
+    r.bloco("subtitulo", AVISO_FICTICIO)
+    for tipo, texto in itens:
+        r.bloco(tipo, texto)
+    aprovacao = date(2020 + rng.randint(0, 5), rng.randint(1, 12), rng.randint(1, 28))
+    sindico = Faker("pt_BR")
+    sindico.seed_instance(projeto.semente * 89)
+    r.bloco("subtitulo", f"{ident.municipio}, {data_por_extenso(aprovacao)}.")
+    r.bloco("subtitulo", f"{sindico.first_name()} {sindico.last_name()} - Síndico(a)")
+    r.bloco("subtitulo", f"{sindico.first_name()} {sindico.last_name()} - Comissão de Obras")
+    return NormaCondominio(DocumentoNormativo(f"Normas de Construção - {ident.condominio}",
+                                              r.blocos), c)
+
+
 # ---------------------------------------------------------------- PDF com texto
 
 
@@ -694,10 +884,35 @@ def _mapa_zoneamento(semente: int, largura: float) -> Drawing:
     return desenho
 
 
+def _desenhar_timbre(canvas, linhas: list[str]) -> None:
+    """Papel timbrado: brasão fictício (anéis e estrela) e as linhas do órgão, centralizados."""
+    cx, cy, raio = A4[0] / 2, A4[1] - 16 * mm, 7 * mm
+    canvas.saveState()
+    canvas.setLineWidth(0.8)
+    canvas.circle(cx, cy, raio)
+    canvas.circle(cx, cy, raio * 0.78)
+    pontos = []
+    for k in range(10):
+        angulo = math.pi / 2 + math.pi * k / 5
+        r = raio * (0.6 if k % 2 == 0 else 0.25)
+        pontos.append((cx + math.cos(angulo) * r, cy + math.sin(angulo) * r))
+    caminho = canvas.beginPath()
+    caminho.moveTo(*pontos[0])
+    for ponto in pontos[1:]:
+        caminho.lineTo(*ponto)
+    caminho.close()
+    canvas.drawPath(caminho, fill=1, stroke=0)
+    for i, linha in enumerate(linhas):
+        canvas.setFont("VeraBd" if i == 0 else "Vera", 9.5 if i == 0 else 8.5)
+        canvas.drawCentredString(cx, cy - raio - (5 + 4.5 * i) * mm, linha)
+    canvas.restoreState()
+
+
 def gerar_pdf_normativo(documento: DocumentoNormativo) -> bytes:
     buffer = io.BytesIO()
+    topo = (24 + 6 * len(documento.timbre)) * mm if documento.timbre else 20 * mm
     doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=25 * mm, rightMargin=20 * mm,
-                            topMargin=20 * mm, bottomMargin=20 * mm, title=documento.titulo,
+                            topMargin=topo, bottomMargin=20 * mm, title=documento.titulo,
                             invariant=True)  # bytes reprodutíveis (sem data e ID aleatório)
     elementos = []
     largura = A4[0] - 45 * mm
@@ -708,8 +923,11 @@ def gerar_pdf_normativo(documento: DocumentoNormativo) -> bytes:
             elementos.append(_mapa_zoneamento(int(bloco.texto), largura))
         elif bloco.tipo == "tabela":
             colunas = len(bloco.linhas[0])
-            primeira = largura * (0.34 if colunas > 6 else 0.5)
-            larguras = [primeira] + [(largura - primeira) / (colunas - 1)] * (colunas - 1)
+            if bloco.mescladas and colunas == 4:  # zona (mesclada) | parâmetro | 2 faixas
+                larguras = [largura * f for f in (0.12, 0.44, 0.22, 0.22)]
+            else:
+                primeira = largura * (0.34 if colunas > 6 else 0.5)
+                larguras = [primeira] + [(largura - primeira) / (colunas - 1)] * (colunas - 1)
             fonte = 6.5 if colunas > 8 else 8
             estilo_celula = ParagraphStyle("cel", fontName="Vera", fontSize=fonte,
                                            leading=fonte + 2, alignment=TA_CENTER)
@@ -720,6 +938,7 @@ def gerar_pdf_normativo(documento: DocumentoNormativo) -> bytes:
                 ("GRID", (0, 0), (-1, -1), 0.4, (0, 0, 0)),
                 ("BACKGROUND", (0, 0), (-1, 0), (0.88, 0.88, 0.88)),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                *[("SPAN", (c0, l0), (c1, l1)) for c0, l0, c1, l1 in bloco.mescladas],
             ]))
             elementos += [Spacer(1, 2 * mm), tabela, Spacer(1, 3 * mm)]
         else:
@@ -729,6 +948,8 @@ def gerar_pdf_normativo(documento: DocumentoNormativo) -> bytes:
         canvas.setFont("Vera", 8)
         canvas.drawCentredString(A4[0] / 2, 10 * mm,
                                  f"{documento.titulo} - página {doc_.page} - DOCUMENTO FICTÍCIO")
+        if documento.timbre:
+            _desenhar_timbre(canvas, documento.timbre)
 
     doc.build(elementos, onFirstPage=rodape, onLaterPages=rodape)
     return buffer.getvalue()

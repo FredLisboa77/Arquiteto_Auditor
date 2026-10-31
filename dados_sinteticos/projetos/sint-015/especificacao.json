@@ -1,0 +1,146 @@
+{
+  "semente": 115,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA VASCONCELOS",
+    "autor": "Ian Nascimento Camargo",
+    "registro_autor": "CAU A291720-1",
+    "rrt": "15612254",
+    "revisao": "R00",
+    "endereco": "Avenida das Orquídeas, 713",
+    "lote": "22",
+    "quadra": "H",
+    "condominio": "Residencial Costa",
+    "municipio": "Porto da Paz",
+    "matricula": "15.860",
+    "cartorio": "1º Ofício de Registro de Imóveis de Porto da Paz",
+    "proprietario": "Bruna Sá Novaes",
+    "cpf_proprietario": "882.204.279-43",
+    "escritorio": "Ateliê da Rocha Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.5,
+    "profundidade": 30.0
+  },
+  "edificacao": {
+    "largura": 9.25,
+    "profundidade": 10.14,
+    "recuo_frontal": 3.5,
+    "recuo_lateral_e": 1.75,
+    "areas_pavimentos": [
+      93.8,
+      75.04
+    ],
+    "altura": 7.5,
+    "muro_altura": 2.0,
+    "area_permeavel": 93.75
+  },
+  "prefeitura": {
+    "lote_area_min": 300.0,
+    "testada_min": 8.0,
+    "recuo_frontal_min": 4.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 3.0,
+    "to_max": 40.0,
+    "ca_max": 1.0,
+    "permeavel_min": 20.0,
+    "altura_max": 9.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null,
+    "area_construida_min": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 3.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 1.5,
+    "to_max": 60.0,
+    "ca_max": null,
+    "permeavel_min": 20.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": 2.2,
+    "area_construida_min": 100.0
+  },
+  "variacao": {
+    "estilo_carimbo": 0,
+    "estilo_quadro": 3,
+    "formato": "A3",
+    "decimal_ponto": false,
+    "cotas_rotuladas": true,
+    "caixa_alta": true,
+    "arquivo_unico": true,
+    "estilo_software": "layout",
+    "estilo_norte": "rosa",
+    "texto_cad": "ttf",
+    "codigos_cad": false,
+    "notacao_cad": false,
+    "vizinhos_com_area": false,
+    "folha_empilhada": false,
+    "capa": false,
+    "perspectiva": false,
+    "revisao_em_branco": false
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "area_total_memorial": 161.34,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "memorial_area_divergente",
+    "recuo_frontal_insuficiente"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 375.0,
+    "projecao": 93.8,
+    "recuo_lateral_d": 1.5,
+    "recuo_fundos": 16.36,
+    "area_total": 168.84,
+    "to": 25.01,
+    "ca": 0.45,
+    "tp": 25.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 375.0,
+      "proprietario_atual": "Bruna Sá Novaes",
+      "onus_ativos": [
+        "R-3/15.860"
+      ],
+      "atos": [
+        "R-1 COMPRA E VENDA (22/03/2014)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (21/02/2015)",
+        "R-3 ALIENAÇÃO FIDUCIÁRIA (09/06/2015)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-1",
+      "data": "06/02/2013",
+      "valor": 650000,
+      "area_descrita": 370.0,
+      "area_diferente_da_atual": true
+    }
+  },
+  "legislacao": {
+    "lei_modelo": "C",
+    "zona": "ZR-1",
+    "valor_revogado": null,
+    "norma_condominio": "copia",
+    "norma_modelo": "numerada",
+    "lei_escaneada": null,
+    "limiar_area_lote": 600.0
+  }
+}

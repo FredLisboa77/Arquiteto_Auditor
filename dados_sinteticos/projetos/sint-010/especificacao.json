@@ -45,7 +45,8 @@
     "permeavel_min": 15.0,
     "altura_max": 9.0,
     "pavimentos_max": 2,
-    "muro_altura_max": null
+    "muro_altura_max": null,
+    "area_construida_min": null
   },
   "condominio": {
     "lote_area_min": null,
@@ -58,7 +59,8 @@
     "permeavel_min": null,
     "altura_max": null,
     "pavimentos_max": null,
-    "muro_altura_max": 2.0
+    "muro_altura_max": 2.0,
+    "area_construida_min": null
   },
   "variacao": {
     "estilo_carimbo": 1,
@@ -69,7 +71,15 @@
     "caixa_alta": true,
     "arquivo_unico": true,
     "estilo_software": "layout",
-    "estilo_norte": "seta"
+    "estilo_norte": "seta",
+    "texto_cad": "ttf",
+    "codigos_cad": false,
+    "notacao_cad": false,
+    "vizinhos_com_area": false,
+    "folha_empilhada": false,
+    "capa": false,
+    "perspectiva": false,
+    "revisao_em_branco": false
   },
   "apresentacao": {
     "area_terreno": null,
@@ -130,6 +140,9 @@
     "lei_modelo": "A",
     "zona": "ZR-2",
     "valor_revogado": null,
-    "norma_condominio": "texto"
+    "norma_condominio": "texto",
+    "norma_modelo": "artigos",
+    "lei_escaneada": null,
+    "limiar_area_lote": null
   }
 }

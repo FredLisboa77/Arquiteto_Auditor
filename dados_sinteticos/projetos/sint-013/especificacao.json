@@ -1,0 +1,146 @@
+{
+  "semente": 113,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA SILVEIRA",
+    "autor": "Yan Almeida Mendes",
+    "registro_autor": "CAU A153995-0",
+    "rrt": "18025889",
+    "revisao": "R00",
+    "endereco": "Avenida dos Jacarandás, 456",
+    "lote": "2",
+    "quadra": "B",
+    "condominio": "Jardins do Rezende",
+    "municipio": "Vila Alves",
+    "matricula": "95.643",
+    "cartorio": "2º Ofício de Registro de Imóveis de Vila Alves",
+    "proprietario": "Ísis Ferreira da Costa",
+    "cpf_proprietario": "294.744.656-94",
+    "escritorio": "Grupo Lopes Arquitetura"
+  },
+  "terreno": {
+    "testada": 16.0,
+    "profundidade": 32.0
+  },
+  "edificacao": {
+    "largura": 13.0,
+    "profundidade": 14.97,
+    "recuo_frontal": 5.0,
+    "recuo_lateral_e": 1.5,
+    "areas_pavimentos": [
+      194.61,
+      155.69
+    ],
+    "altura": 10.5,
+    "muro_altura": 2.2,
+    "area_permeavel": 128.0
+  },
+  "prefeitura": {
+    "lote_area_min": 300.0,
+    "testada_min": 8.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 50.0,
+    "ca_max": 1.0,
+    "permeavel_min": 20.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null,
+    "area_construida_min": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": null,
+    "recuo_fundos_min": null,
+    "to_max": 45.0,
+    "ca_max": null,
+    "permeavel_min": null,
+    "altura_max": null,
+    "pavimentos_max": null,
+    "muro_altura_max": 2.2,
+    "area_construida_min": null
+  },
+  "variacao": {
+    "estilo_carimbo": 3,
+    "estilo_quadro": 4,
+    "formato": "A1",
+    "decimal_ponto": true,
+    "cotas_rotuladas": false,
+    "caixa_alta": true,
+    "arquivo_unico": true,
+    "estilo_software": "autocad",
+    "estilo_norte": "rosa_girada",
+    "texto_cad": "misto",
+    "codigos_cad": true,
+    "notacao_cad": true,
+    "vizinhos_com_area": true,
+    "folha_empilhada": true,
+    "capa": true,
+    "perspectiva": false,
+    "revisao_em_branco": false
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": 360.3,
+    "area_total_memorial": null,
+    "to_declarada": 42.01,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "to_declarada_errada",
+    "altura_excedida",
+    "soma_areas_errada"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 512.0,
+    "projecao": 194.61,
+    "recuo_lateral_d": 1.5,
+    "recuo_fundos": 12.03,
+    "area_total": 350.3,
+    "to": 38.01,
+    "ca": 0.68,
+    "tp": 25.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 512.0,
+      "proprietario_atual": "Ísis Ferreira da Costa",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (27/03/2012)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (25/11/2012)",
+        "AV-3 ALTERAÇÃO DE DENOMINAÇÃO (09/09/2013)",
+        "R-4 COMPRA E VENDA (02/07/2015)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-4",
+      "data": "04/10/2013",
+      "valor": 730000,
+      "area_descrita": 512.0,
+      "area_diferente_da_atual": false
+    }
+  },
+  "legislacao": {
+    "lei_modelo": "A",
+    "zona": "ZR-3",
+    "valor_revogado": null,
+    "norma_condominio": "texto",
+    "norma_modelo": "artigos",
+    "lei_escaneada": null,
+    "limiar_area_lote": null
+  }
+}

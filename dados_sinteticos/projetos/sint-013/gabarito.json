@@ -1,0 +1,266 @@
+{
+  "$schema": "../../../docs/esquemas/gabarito.schema.json",
+  "conjunto": "sint-013",
+  "versao_gabarito": 1,
+  "rodada": "R00",
+  "reservado_avaliacao": true,
+  "descricao": "Erros injetados: to_declarada_errada, altura_excedida, soma_areas_errada",
+  "zona": "ZR-3",
+  "valores_esperados": {
+    "TERRENO_AREA": {
+      "prancha": 512.0,
+      "memorial": 512.0,
+      "matricula": 512.0,
+      "escritura": 512.0
+    },
+    "AREA_CONSTR_TOTAL": {
+      "prancha": 360.3,
+      "memorial": 360.3,
+      "calculado": 350.3
+    },
+    "LOTE_AREA_MIN": {
+      "prefeitura": 300.0,
+      "adotado": 300.0,
+      "calculado": 512.0
+    },
+    "LOTE_TESTADA_MIN": {
+      "prefeitura": 8.0,
+      "adotado": 8.0,
+      "calculado": 16.0
+    },
+    "RECUO_FRONTAL": {
+      "prefeitura": 5.0,
+      "condominio": 5.0,
+      "adotado": 5.0,
+      "calculado": 5.0
+    },
+    "RECUO_LATERAL_E": {
+      "prefeitura": 1.5,
+      "adotado": 1.5,
+      "calculado": 1.5
+    },
+    "RECUO_LATERAL_D": {
+      "prefeitura": 1.5,
+      "adotado": 1.5,
+      "calculado": 1.5
+    },
+    "RECUO_FUNDOS": {
+      "prefeitura": 2.0,
+      "adotado": 2.0,
+      "calculado": 12.03
+    },
+    "TO_MAX": {
+      "prefeitura": 50.0,
+      "condominio": 45.0,
+      "adotado": 50.0,
+      "calculado": 38.01
+    },
+    "CA_MAX": {
+      "prefeitura": 1.0,
+      "adotado": 1.0,
+      "calculado": 0.68
+    },
+    "PERMEAVEL_MIN": {
+      "prefeitura": 20.0,
+      "adotado": 20.0,
+      "calculado": 25.0
+    },
+    "ALTURA_MAX": {
+      "prefeitura": 10.0,
+      "adotado": 10.0,
+      "calculado": 10.5
+    },
+    "PAVIMENTOS_MAX": {
+      "prefeitura": 2.0,
+      "adotado": 2.0,
+      "calculado": 2.0
+    },
+    "MURO_ALTURA_MAX": {
+      "condominio": 2.2,
+      "adotado": 2.2,
+      "calculado": 2.2
+    },
+    "ID_PROPRIETARIO": {
+      "matricula": "Ísis Ferreira da Costa",
+      "escritura": "Ísis Ferreira da Costa"
+    }
+  },
+  "itens_esperados": [
+    {
+      "chave": "ID_MATRICULA",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_REVISAO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_CARTORIO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_LOTE_QUADRA",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_CONDOMINIO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_ENDERECO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_AUTOR_REGISTRO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_RRT_ART",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ID_PROPRIETARIO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "TERRENO_AREA",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "TERRENO_TESTADA",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "AREA_CONSTR_PAV",
+      "escopo": "pavimento=1",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "AREA_CONSTR_PAV",
+      "escopo": "pavimento=2",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "AREA_CONSTR_TOTAL",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "AREA_CONSTR_SOMA",
+      "status": "divergente",
+      "documentos": []
+    },
+    {
+      "chave": "TO_DECLARADA",
+      "status": "divergente",
+      "documentos": [],
+      "valor_projeto": 42.01
+    },
+    {
+      "chave": "CA_DECLARADO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "PERMEAVEL_DECLARADA",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "LOTE_AREA_MIN",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "LOTE_TESTADA_MIN",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "RECUO_FRONTAL",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "RECUO_LATERAL_E",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "RECUO_LATERAL_D",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "RECUO_FUNDOS",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "TO_MAX",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "CA_MAX",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "PERMEAVEL_MIN",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ALTURA_MAX",
+      "status": "nao_atende",
+      "documentos": [],
+      "valor_projeto": 10.5,
+      "limite": 10.0
+    },
+    {
+      "chave": "PAVIMENTOS_MAX",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "MURO_ALTURA_MAX",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "NORTE_INDICADO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ASSINATURA_AUTOR",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ASSINATURA_PROPRIETARIO",
+      "status": "atende",
+      "documentos": []
+    },
+    {
+      "chave": "ASSINATURA_DIGITAL_VALIDA",
+      "status": "atende",
+      "documentos": []
+    }
+  ],
+  "comparacao_rodada_anterior": []
+}

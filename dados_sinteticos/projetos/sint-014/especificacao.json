@@ -1,0 +1,143 @@
+{
+  "semente": 114,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA BRITO",
+    "autor": "Bárbara Rios da Cruz",
+    "registro_autor": "CAU A186344-3",
+    "rrt": "10800675",
+    "revisao": "R00",
+    "endereco": "Alameda das Magnólias, 553",
+    "lote": "34",
+    "quadra": "E",
+    "condominio": "Jardins do Nunes",
+    "municipio": "Nova da Costa",
+    "matricula": "13.830",
+    "cartorio": "3º Ofício de Registro de Imóveis de Nova da Costa",
+    "proprietario": "Calebe Cassiano Moreira",
+    "cpf_proprietario": "185.511.761-44",
+    "escritorio": "Oficina Moura Arquitetura"
+  },
+  "terreno": {
+    "testada": 15.0,
+    "profundidade": 35.0
+  },
+  "edificacao": {
+    "largura": 12.0,
+    "profundidade": 18.39,
+    "recuo_frontal": 5.0,
+    "recuo_lateral_e": 1.5,
+    "areas_pavimentos": [
+      220.68,
+      176.54
+    ],
+    "altura": 7.0,
+    "muro_altura": 2.0,
+    "area_permeavel": 105.0
+  },
+  "prefeitura": {
+    "lote_area_min": 300.0,
+    "testada_min": 12.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 3.0,
+    "to_max": 40.0,
+    "ca_max": 1.2,
+    "permeavel_min": 15.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null,
+    "area_construida_min": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 3.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 1.5,
+    "to_max": 60.0,
+    "ca_max": null,
+    "permeavel_min": 20.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": 2.2,
+    "area_construida_min": 100.0
+  },
+  "variacao": {
+    "estilo_carimbo": 2,
+    "estilo_quadro": 1,
+    "formato": "A2",
+    "decimal_ponto": false,
+    "cotas_rotuladas": false,
+    "caixa_alta": true,
+    "arquivo_unico": false,
+    "estilo_software": "revit",
+    "estilo_norte": "rosa",
+    "texto_cad": "ttf",
+    "codigos_cad": false,
+    "notacao_cad": false,
+    "vizinhos_com_area": false,
+    "folha_empilhada": false,
+    "capa": false,
+    "perspectiva": false,
+    "revisao_em_branco": false
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "area_total_memorial": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "to_excedida"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 525.0,
+    "projecao": 220.68,
+    "recuo_lateral_d": 1.5,
+    "recuo_fundos": 11.61,
+    "area_total": 397.22,
+    "to": 42.03,
+    "ca": 0.76,
+    "tp": 20.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 525.0,
+      "proprietario_atual": "Calebe Cassiano Moreira",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (02/01/2015)",
+        "R-2 ALIENAÇÃO FIDUCIÁRIA (13/10/2015)",
+        "AV-3 CANCELAMENTO (16/11/2016)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-1",
+      "data": "02/08/2013",
+      "valor": 470000,
+      "area_descrita": 525.0,
+      "area_diferente_da_atual": false
+    }
+  },
+  "legislacao": {
+    "lei_modelo": "C",
+    "zona": "ZR-3",
+    "valor_revogado": null,
+    "norma_condominio": "texto",
+    "norma_modelo": "numerada",
+    "lei_escaneada": "copia",
+    "limiar_area_lote": 300.0
+  }
+}

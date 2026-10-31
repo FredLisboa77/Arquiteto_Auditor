@@ -143,3 +143,24 @@ def test_varios_erros_aparecem_juntos(tmp_path):
     mensagem = mensagem_de_erro(tmp_path, dados)
     assert "rodada" in mensagem
     assert "versao_gabarito" in mensagem
+
+
+def _gabarito_com(itens):
+    from arquiteto_auditor.avaliacao.gabarito import Gabarito
+
+    return Gabarito.model_validate({"conjunto": "teste", "versao_gabarito": 1, "rodada": "R00",
+                                    "itens_esperados": itens})
+
+
+def test_muro_aceita_item_unico_ou_um_por_posicao():
+    # gabaritos antigos (sem escopo) continuam válidos: o escopo de posição é opcional
+    assert _gabarito_com([{"chave": "MURO_ALTURA_MAX", "status": "atende"}])
+    por_posicao = _gabarito_com([
+        {"chave": "MURO_ALTURA_MAX", "escopo": "posicao=fundos", "status": "atende"},
+        {"chave": "MURO_ALTURA_MAX", "escopo": "posicao=lateral", "status": "nao_atende"},
+    ])
+    assert len(por_posicao.erros_esperados()) == 1
+
+
+def test_area_construida_minima_esta_no_catalogo():
+    assert _gabarito_com([{"chave": "AREA_CONSTR_MIN", "status": "atende"}])

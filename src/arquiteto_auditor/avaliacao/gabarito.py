@@ -47,7 +47,7 @@ def _checar_escopo(chave: str, escopo: str | None) -> None:
     definicao = _catalogo().get(chave)
     if definicao is None:
         return
-    if definicao.escopo and not escopo:
+    if definicao.escopo and not escopo and not definicao.escopo_opcional:
         raise ValueError(
             f"a chave {chave} exige 'escopo' (ex.: \"{definicao.escopo}=1\")"
         )

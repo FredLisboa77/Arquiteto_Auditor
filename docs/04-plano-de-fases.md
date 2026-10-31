@@ -14,7 +14,7 @@
 | 1 | Ambiente e proteção | 1–2 | `pip` funcionando, Tesseract, esqueleto do projeto, anti-vazamento, repositório no GitHub ✅ (30/10/2026) |
 | 2 | Modelo de dados e gabarito | 2–3 | Classes de domínio + formato JSON do gabarito + normalizador de números ✅ (30/10/2026) |
 | 3 | Base sintética I — pranchas | 3–4 | Gerador de pranchas vetoriais variadas + diagnóstico dos PDFs reais ✅ (30/10/2026) |
-| 4 | Base sintética II — escaneados, memoriais, leis, revisões | 3–4 | Matrículas/escrituras "escaneadas", memoriais, leis, normas, conjunto R00/R01 |
+| 4 | Base sintética II — escaneados, memoriais, leis, revisões | 3–4 | Matrículas/escrituras "escaneadas", memoriais, leis, normas, conjunto R00/R01 ✅ (31/10/2026) |
 | 5 | Ingestão e OCR | 2–3 | Qualquer PDF → páginas com palavras, coordenadas e confiança |
 | 6 | Extração das pranchas | 4–6 | Carimbo, quadro de áreas, recuos rotulados, identificação |
 | 7 | Extração de matrícula, escritura e memorial | 3–5 | Estado atual do imóvel com averbações; dados do memorial |
@@ -108,10 +108,10 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
    - capa e folhas sem texto;
    - revisão em branco.
 
-**Critérios de aceite**
-- [ ] ≥ 8 conjuntos completos, todos com gabarito válido.
-- [ ] Nenhum dado real: nomes/números gerados pelo Faker; script de verificação confirma que nenhum CPF válido aparece.
-- [ ] Você aprova a "cara" dos escaneados (realismo suficiente).
+**Critérios de aceite** — concluída em 31/10/2026
+- [x] ≥ 8 conjuntos completos, todos com gabarito válido (16 conjuntos: pranchas, matrícula, escritura, memorial, lei municipal e norma do condomínio; sint-009 → sint-010 em R00 → R01; 4 reservados para avaliação; calibração com 7 documentos reais vistos só mascarados — docs/06).
+- [x] Nenhum dado real: nomes/números gerados pelo Faker; `scripts/verificar_base_sintetica.py` confirma que nenhum CPF ou CNPJ válido aparece (texto, comentários dos PDFs e texto dos escaneados).
+- [x] Você aprova a "cara" dos escaneados (aprovada após recalibração com uma escritura e uma certidão de inteiro teor reais, vistas só em versão mascarada — `scripts/mascarar_escaneado.py`, docs/06 §5).
 
 ---
 

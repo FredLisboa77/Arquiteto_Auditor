@@ -3,6 +3,11 @@
 Folhas:  01 situação + localização + quadro de áreas
          02 plantas baixas (térreo e superior)
          03 corte e fachada (altura total e muro)
+         + capa e perspectiva sem texto, quando a variação pede.
+
+Modos de texto (variação "texto_cad"): TrueType selecionável; "shx", em que o texto vira
+traços e o conteúdo vai para comentários invisíveis (como o AutoCAD exporta); e "misto", com
+os rótulos do carimbo em TrueType e o resto em SHX.
 
 Todas as folhas trazem a marca "DOCUMENTO FICTÍCIO" e os metadados identificam a base sintética.
 A assinatura digital é aplicada depois, por assinatura.py.
@@ -11,10 +16,14 @@ A assinatura digital é aplicada depois, por assinatura.py.
 from __future__ import annotations
 
 import io
+import math
+import random
+import textwrap
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+import pymupdf
 from reportlab.pdfgen import canvas
 
 from dados_sinteticos.geradores import blocos
@@ -81,7 +90,8 @@ def campos_carimbo(folha: Folha, indice: int, titulo_folha: str):
         f"{ident.lote} / {ident.quadra}",
         ident.municipio, f"{p.matricula_prancha} — {ident.cartorio}", proprietario,
         ident.autor, ident.registro_autor, ident.rrt, titulo_folha,
-        f"{indice + 1:02d}/{p.numero_folhas:02d}", p.revisao_da_folha(indice),
+        "" if folha.v.folha_empilhada else numero_da_folha(folha.v, indice),
+        "" if folha.v.revisao_em_branco else p.revisao_da_folha(indice),
         folha.rotulo("Indicada"),
         DATA_EMISSAO,
     )
@@ -98,17 +108,18 @@ def _carimbo_tabela(folha: Folha, r: Retangulo, campos, rotulo_acima: bool):
         folha.linha(r.x, y, r.direita, y, 0.18)
         if rotulo_acima:
             folha.texto(r.x + 1.5, y + altura_linha - folha.altura_texto(0.7) - 0.8,
-                        campo.rotulo, escala=0.7)
+                        campo.rotulo, escala=0.7, rotulo_carimbo=True)
             folha.texto(r.x + 1.5, y + 1.2, campo.valor, escala=0.95, negrito=True)
         else:
-            folha.texto(r.x + 1.5, y + 1.2, campo.rotulo + ":", escala=0.8)
+            folha.texto(r.x + 1.5, y + 1.2, campo.rotulo + ":", escala=0.8,
+                        rotulo_carimbo=True)
             folha.texto(r.x + r.largura * 0.3, y + 1.2, campo.valor, escala=0.9)
     # Espaço das assinaturas (visual)
     y_assinatura = r.y + altura_linha * 0.6
     for posicao, texto in ((0.05, "Autor do projeto"), (0.55, "Proprietário")):
         x = r.x + r.largura * posicao
         folha.linha(x, y_assinatura + 3, x + r.largura * 0.4, y_assinatura + 3, 0.18)
-        folha.texto(x, y_assinatura, folha.rotulo(texto), escala=0.7)
+        folha.texto(x, y_assinatura, folha.rotulo(texto), escala=0.7, rotulo_carimbo=True)
 
 
 def _carimbo_faixa(folha: Folha, r: Retangulo, campos):
@@ -124,12 +135,14 @@ def _carimbo_faixa(folha: Folha, r: Retangulo, campos):
         y = r.topo - (linha + 1) * altura_linha
         folha.retangulo(Retangulo(x, y, largura_coluna, altura_linha), 0.18)
         folha.texto(x + 1.5, y + altura_linha - folha.altura_texto(0.7) - 1, campo.rotulo,
-                    escala=0.7)
+                    escala=0.7, rotulo_carimbo=True)
         folha.texto(x + 1.5, y + 1.5, campo.valor, escala=0.85, negrito=True)
 
 
 def _tabela_revisoes(folha: Folha, r: Retangulo, indice: int):
     """Quadro de revisões acima do carimbo (estilo 3)."""
+    if folha.v.revisao_em_branco:
+        return r.topo
     revisao_folha = folha.p.revisao_da_folha(indice)
     linhas = [("R00", DATA_EMISSAO, folha.rotulo("Emissão inicial"))]
     if revisao_folha != "R00":
@@ -143,6 +156,26 @@ def _tabela_revisoes(folha: Folha, r: Retangulo, indice: int):
         folha.texto(r.x + 40, y + 1.2, descricao, escala=0.85)
         y += altura
     return y
+
+
+def total_de_folhas(v) -> int:
+    return len(FOLHAS) + int(v.capa) + int(v.perspectiva)
+
+
+def numero_da_folha(v, indice: int) -> str:
+    """ "02/05": a capa, quando existe, é a folha 01."""
+    return f"{indice + 1 + int(v.capa):02d}/{total_de_folhas(v):02d}"
+
+
+def _folha_empilhada(folha: Folha, direita: float, topo: float, indice: int) -> float:
+    """Nº da folha como dois números grandes, um sobre o outro (ex.: 02 sobre 05)."""
+    caixa = Retangulo(direita - 24, topo + 2, 24, 28)
+    folha.retangulo(caixa, 0.35)
+    folha.linha(caixa.x + 3, caixa.y + 14, caixa.direita - 3, caixa.y + 14, 0.35)
+    atual, total = numero_da_folha(folha.v, indice).split("/")
+    folha.texto(caixa.x + 12, caixa.y + 17, atual, escala=2.4, alinhamento="centro")
+    folha.texto(caixa.x + 12, caixa.y + 3, total, escala=2.4, alinhamento="centro")
+    return caixa.topo + 2
 
 
 def desenhar_carimbo(folha: Folha, indice: int, titulo_folha: str):
@@ -160,6 +193,8 @@ def desenhar_carimbo(folha: Folha, indice: int, titulo_folha: str):
                       min(110.0, interna.altura * 0.36))
         _carimbo_tabela(folha, r, campos, rotulo_acima=False)
         topo = _tabela_revisoes(folha, r, indice) if estilo == 3 else r.topo
+        if folha.v.folha_empilhada:
+            topo = _folha_empilhada(folha, r.direita, topo, indice)
         return Retangulo(interna.x, interna.y, interna.largura, interna.altura), Retangulo(
             r.x, topo, r.largura, interna.topo - topo)
     if estilo == 1:
@@ -210,6 +245,25 @@ def linhas_quadro(folha: Folha):
     return [(folha.rotulo(r), v, u) for r, (v, u) in zip(rotulos, valores, strict=True)]
 
 
+def _linhas_quadro_cad(folha: Folha) -> list[tuple[list[str], str]]:
+    p, e, n = folha.p, folha.p.edificacao, folha.num
+    pav = e.areas_pavimentos
+    linhas = [
+        (["ÁREA DO TERRENO"], f"A={n(p.area_terreno_prancha)}m²"),
+        (["ÁREA CONSTRUÍDA", "TÉRREO"], f"A={n(pav[0])}m²"),
+        (["ÁREA CONSTRUÍDA", "PAV. SUPERIOR"], f"A={n(pav[1])}m²"),
+        (["ÁREA CONSTRUÍDA TOTAL"], f"A={n(p.area_total_prancha)}m²"),
+        (["ÁREA DE PROJEÇÃO"], f"A={n(e.projecao)}m²"),
+        (["ÁREA PERMEÁVEL"], f"A={n(e.area_permeavel)}m²"),
+        (["TAXA DE", "OCUPAÇÃO"], f"{n(p.to_prancha)}%"),
+        (["COEFICIENTE DE", "APROVEITAMENTO"], f"C={n(p.ca_prancha)}"),
+        (["TAXA DE", "PERMEABILIDADE"], f"{n(p.tp_prancha)}%"),
+    ]
+    if "altura_total" not in p.apresentacao.cotas_omitidas:
+        linhas.append((["ALTURA DA", "EDIFICAÇÃO"], f"H={n(e.altura)}m"))
+    return linhas
+
+
 def desenhar_quadro(folha: Folha, x: float, topo: float, largura: float) -> float:
     """Desenha o quadro de áreas no estilo da variação; devolve o y da base."""
     linhas = linhas_quadro(folha)
@@ -257,6 +311,16 @@ def desenhar_quadro(folha: Folha, x: float, topo: float, largura: float) -> floa
         folha.texto(x, y, texto, escala=0.9)
         return y
 
+    if estilo == 4:  # AutoCAD: "A=", "C=", "H=", rótulos quebrados em duas linhas
+        for rotulos, valor in _linhas_quadro_cad(folha):
+            y -= altura
+            folha.texto(x, y, rotulos[0], escala=0.85)
+            folha.texto(x + largura, y, valor, escala=0.85, alinhamento="direita")
+            for complemento in rotulos[1:]:
+                y -= altura * 0.85
+                folha.texto(x, y, complemento, escala=0.85)
+        return y
+
     # estilo 3: valor primeiro, rótulo depois
     for rotulo, valor, unidade in linhas:
         y -= altura
@@ -272,8 +336,9 @@ def desenhar_norte(folha: Folha, x: float, y: float):
     if not folha.p.apresentacao.mostrar_norte:
         return
     raio = 7.0
-    if folha.v.estilo_norte == "rosa":
-        desenhar_rosa_dos_ventos(folha, x, y, raio)
+    if folha.v.estilo_norte in ("rosa", "rosa_girada"):
+        girada = folha.v.estilo_norte == "rosa_girada"
+        desenhar_rosa_dos_ventos(folha, x, y, raio, 15 + folha.p.semente % 40 if girada else 0)
         return
     folha.c.setLineWidth(0.25 * MM)
     folha.c.circle(x * MM, y * MM, raio * MM)
@@ -286,18 +351,27 @@ def desenhar_norte(folha: Folha, x: float, y: float):
     folha.texto(x, y + raio + 1.5, "N", escala=1.3, negrito=True, alinhamento="centro")
 
 
-def desenhar_rosa_dos_ventos(folha: Folha, x: float, y: float, raio: float):
-    """Rosa dos ventos de quatro pontas, com N, S, L e O."""
+def desenhar_rosa_dos_ventos(folha: Folha, x: float, y: float, raio: float,
+                            giro: float = 0.0):
+    """Rosa dos ventos de quatro pontas: N, S, L, O; girada (giro em graus), com "E" de Este."""
+    seno, cosseno = math.sin(math.radians(-giro)), math.cos(math.radians(-giro))
+
+    def girar(dx, dy):  # sentido horário, como um Norte que não aponta para cima
+        return dx * cosseno - dy * seno, dx * seno + dy * cosseno
+
     folha.circulo(x, y, raio * 0.55, PENA_FINA)
     interno = raio * 0.18
     for dx, dy in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-        ponta = (x + dx * raio, y + dy * raio)
-        lateral_a = (x + dy * interno, y - dx * interno)
-        lateral_b = (x - dy * interno, y + dx * interno)
+        gx, gy = girar(dx, dy)
+        ponta = (x + gx * raio, y + gy * raio)
+        lateral_a = (x + gy * interno, y - gx * interno)
+        lateral_b = (x - gy * interno, y + gx * interno)
         folha.poligono([ponta, lateral_a, (x, y)], PENA_FINA, cheio=(dx, dy) == (0, 1))
         folha.poligono([ponta, lateral_b, (x, y)], PENA_FINA)
-    for letra, dx, dy in (("N", 0, 1), ("S", 0, -1), ("L", 1, 0), ("O", -1, 0)):
-        folha.texto(x + dx * (raio + 3), y + dy * (raio + 3) - 1.2, letra,
+    leste = "E" if giro else "L"
+    for letra, dx, dy in (("N", 0, 1), ("S", 0, -1), (leste, 1, 0), ("O", -1, 0)):
+        gx, gy = girar(dx, dy)
+        folha.texto(x + gx * (raio + 3), y + gy * (raio + 3) - 1.2, letra,
                     escala=1.2 if letra == "N" else 0.8, negrito=letra == "N",
                     alinhamento="centro")
 
@@ -316,10 +390,29 @@ def desenhar_localizacao(folha: Folha, r: Retangulo):
             lote = Retangulo(r.x + coluna * largura_lote, base_y + linha * altura_lote,
                              largura_lote, altura_lote)
             folha.retangulo(lote, 0.5 if (linha, coluna) == (0, 1) else 0.18)
-    folha.texto(r.x + 1.5 * largura_lote, base_y + altura_lote / 2,
-                f"{folha.rotulo('Lote')} {ident.lote}", escala=0.75, alinhamento="centro")
+            if folha.v.vizinhos_com_area:
+                _rotular_lote_com_area(folha, lote, linha, coluna)
+    if not folha.v.vizinhos_com_area:
+        folha.texto(r.x + 1.5 * largura_lote, base_y + altura_lote / 2,
+                    f"{folha.rotulo('Lote')} {ident.lote}", escala=0.75, alinhamento="centro")
     folha.texto(r.x, base_y - folha.altura_texto() - 1,
                 f"{folha.rotulo('Quadra')} {ident.quadra} — {ident.condominio}", escala=0.8)
+
+
+def _rotular_lote_com_area(folha: Folha, lote: Retangulo, linha: int, coluna: int):
+    """Número e área de cada lote da quadra (distração forte para a área do terreno)."""
+    p = folha.p
+    numero_projeto = int(p.identificacao.lote)
+    numero = numero_projeto + (coluna - 1) + linha * 10
+    if (linha, coluna) == (0, 1):
+        area = p.area_terreno_prancha
+    else:
+        area = round(p.area_terreno_prancha + random.Random(p.semente * 7 + numero).choice(
+            [-37.5, -12.25, -4.8, 6.4, 15.0, 22.75]), 2)
+    folha.texto(lote.x + lote.largura / 2, lote.y + lote.altura * 0.6,
+                f"{folha.rotulo('Lote')} {max(numero, 1)}", escala=0.55, alinhamento="centro")
+    folha.texto(lote.x + lote.largura / 2, lote.y + lote.altura * 0.3,
+                f"{folha.num(area)} m²", escala=0.5, alinhamento="centro")
 
 
 def desenhar_vizinhos(folha: Folha, lote: Retangulo, k: float):
@@ -413,7 +506,7 @@ def folha_situacao(folha: Folha, indice: int):
     p = folha.p
     t, e = p.terreno, p.edificacao
     principal, coluna = regioes(folha, indice, folha.rotulo("Situação e localização"))
-    folha.texto(principal.x + 2, principal.topo - 4, MARCA_FICTICIO, escala=0.6)
+    folha.texto(principal.x + 2, principal.topo - 4, MARCA_FICTICIO, escala=0.6, ttf=True)
 
     escala = escolher_escala(t.testada + 8, t.profundidade + 2.6, principal, folga_mm=50,
                              minima=100)
@@ -521,6 +614,20 @@ ESQUADRIAS = (
 )
 
 
+PAREDE_EXTERNA, PAREDE_INTERNA = 0.20, 0.15
+
+
+def area_util(e, ambiente) -> float:
+    """Área útil do ambiente (descontadas as paredes), em m² — a mesma escrita na planta."""
+    esq = PAREDE_EXTERNA if ambiente[1] == 0 else PAREDE_INTERNA / 2
+    dir_ = PAREDE_EXTERNA if ambiente[3] == 1 else PAREDE_INTERNA / 2
+    baixo = PAREDE_EXTERNA if ambiente[2] == 0 else PAREDE_INTERNA / 2
+    cima = PAREDE_EXTERNA if ambiente[4] == 1 else PAREDE_INTERNA / 2
+    largura = (ambiente[3] - ambiente[1]) * e.largura - esq - dir_
+    profundidade = (ambiente[4] - ambiente[2]) * e.profundidade - baixo - cima
+    return largura * profundidade
+
+
 def desenhar_planta(folha: Folha, x0: float, y0: float, k: float, ambientes, terreo: bool):
     e = folha.p.edificacao
     largura, profundidade = e.largura * k, e.profundidade * k
@@ -558,7 +665,7 @@ def desenhar_planta(folha: Folha, x0: float, y0: float, k: float, ambientes, ter
         folha.texto(r.x + r.largura / 2, cy, folha.rotulo(nome), escala=0.75, negrito=True,
                     alinhamento="centro")
         if nivel_m is not None:
-            area = (r.largura / k) * (r.altura / k)
+            area = area_util(e, a)
             folha.texto(r.x + r.largura / 2, cy - folha.altura_texto(0.65) - 1,
                         f"A = {formatar_numero(area)} m²", escala=0.65, alinhamento="centro")
             folha.texto(r.x + r.largura / 2, cy - 2 * folha.altura_texto(0.65) - 2,
@@ -664,7 +771,7 @@ def dividir_em_dois(area: Retangulo, largura_m: float, altura_m: float, folga_mm
 def folha_plantas(folha: Folha, indice: int):
     e = folha.p.edificacao
     principal, coluna = regioes(folha, indice, folha.rotulo("Plantas baixas"))
-    folha.texto(principal.x + 2, principal.topo - 4, MARCA_FICTICIO, escala=0.6)
+    folha.texto(principal.x + 2, principal.topo - 4, MARCA_FICTICIO, escala=0.6, ttf=True)
     area_total = area_de_desenho(folha, principal, coluna)
     quadro_esquadrias(folha, area_total.x + 2, area_total.topo - 8)
     area_plantas = Retangulo(area_total.x, area_total.y, area_total.largura,
@@ -700,7 +807,10 @@ def desenhar_corte(folha: Folha, x0: float, solo: float, k: float):
     # Muro na divisa frontal
     muro = Retangulo(x0, solo, 0.15 * k + 0.4, e.muro_altura * k)
     blocos.parede(folha, muro)
-    folha.texto(x0 + 1.5, solo + e.muro_altura * k + 2, folha.rotulo("Muro"), escala=0.7)
+    rotulo_muro = folha.rotulo("Muro")
+    if folha.v.notacao_cad and "muro" not in folha.p.apresentacao.cotas_omitidas:
+        rotulo_muro = f"MURO H={folha.num(e.muro_altura)}m"
+    folha.texto(x0 + 1.5, solo + e.muro_altura * k + 2, rotulo_muro, escala=0.7)
     folha.cota(x0 - 6, solo, x0 - 6, solo + e.muro_altura * k, e.muro_altura, "Muro", "muro")
     blocos.pessoa(folha, x0 + 1.4 * k, solo, k)
 
@@ -791,7 +901,7 @@ def desenhar_fachada(folha: Folha, fx: float, solo: float, k: float):
 def folha_corte(folha: Folha, indice: int):
     e = folha.p.edificacao
     principal, coluna = regioes(folha, indice, folha.rotulo("Corte e fachada"))
-    folha.texto(principal.x + 2, principal.topo - 4, MARCA_FICTICIO, escala=0.6)
+    folha.texto(principal.x + 2, principal.topo - 4, MARCA_FICTICIO, escala=0.6, ttf=True)
     area_total = area_de_desenho(folha, principal, coluna)
     altura_vista = max(e.altura, TOPO_LAJE) + 1
     escala, (parte_corte, parte_fachada) = dividir_em_dois(
@@ -817,6 +927,94 @@ def folha_corte(folha: Folha, indice: int):
 FOLHAS: tuple[Callable[[Folha, int], None], ...] = (folha_situacao, folha_plantas, folha_corte)
 
 
+def folha_capa(folha: Folha):
+    """Capa com a identificação em texto corrido e a lista de folhas (sem carimbo)."""
+    p, ident = folha.p, folha.p.identificacao
+    margem = 25.0
+    folha.retangulo(Retangulo(margem, 10, folha.largura_mm - margem - 10,
+                              folha.altura_mm - 20), 0.6)
+    x, y = margem + 20, folha.altura_mm - 50
+    folha.texto(x, y, MARCA_FICTICIO, escala=0.6, ttf=True)
+    folha.texto(x, y - 25, ident.titulo, escala=3.0, negrito=True)
+    folha.texto(x, y - 40, folha.rotulo("Projeto arquitetônico — residência unifamiliar"),
+                escala=1.6)
+    proprietario = (f"{folha.rotulo('Proprietário')}: {ident.proprietario}. "
+                    if p.apresentacao.mostrar_proprietario else "")
+    paragrafo = (
+        f"{proprietario}{folha.rotulo('Endereço')}: {ident.endereco}, "
+        f"{folha.rotulo('Lote')} {ident.lote}, {folha.rotulo('Quadra')} {ident.quadra}, "
+        f"{ident.condominio}, {ident.municipio}. {folha.rotulo('Matrícula')} nº "
+        f"{p.matricula_prancha} do {ident.cartorio}. {folha.rotulo('Autor do projeto')}: "
+        f"{ident.autor}, {ident.registro_autor}. RRT nº {ident.rrt}."
+    )
+    colunas = int((folha.largura_mm - 2 * margem - 40) / (folha.altura_texto(1.2) * 0.62))
+    y -= 60
+    for linha in textwrap.wrap(paragrafo, colunas):
+        folha.texto(x, y, linha, escala=1.2)
+        y -= folha.altura_texto(1.2) * 1.6
+    y -= 10
+    folha.texto(x, y, folha.rotulo("Folhas"), escala=1.2, negrito=True)
+    nomes = ["Capa", "Situação e localização", "Plantas baixas", "Corte e fachada"]
+    if folha.v.perspectiva:
+        nomes.append("Perspectiva")
+    for numero, nome in enumerate(nomes, start=1):
+        y -= folha.altura_texto(1.1) * 1.7
+        folha.texto(x + 5, y, f"{numero:02d} — {folha.rotulo(nome)}", escala=1.1)
+
+
+def folha_perspectiva(folha: Folha):
+    """Folha sem nenhum texto: só a perspectiva (a marca de fictício é desenhada, não escrita)."""
+    e = folha.p.edificacao
+    margem = 25.0
+    folha.retangulo(Retangulo(margem, 10, folha.largura_mm - margem - 10,
+                              folha.altura_mm - 20), 0.6)
+    k = min(folha.largura_mm, folha.altura_mm) / 45
+    cx, cy = folha.largura_mm / 2, folha.altura_mm * 0.3
+    angulo = math.radians(30)
+    dx, dy = math.cos(angulo), math.sin(angulo)
+
+    def ponto(x, y, z):  # axonometria isométrica: x (largura), y (profundidade), z (altura)
+        return cx + (x - y) * dx * k, cy + (x + y) * dy * k + z * k
+
+    largura, profundidade, altura = e.largura, e.profundidade, TOPO_LAJE
+    base = [ponto(0, 0, 0), ponto(largura, 0, 0), ponto(largura, profundidade, 0),
+            ponto(0, profundidade, 0)]
+    topo = [ponto(x, y, altura) for x, y in ((0, 0), (largura, 0), (largura, profundidade),
+                                            (0, profundidade))]
+    folha.poligono(base, PENA_MEDIA)
+    folha.poligono(topo, PENA_MEDIA)
+    for (x1, y1), (x2, y2) in zip(base, topo, strict=True):
+        folha.linha(x1, y1, x2, y2, PENA_MEDIA)
+    cumeeira = [ponto(largura / 2, -BEIRAL, e.altura), ponto(largura / 2, profundidade + BEIRAL,
+                                                               e.altura)]
+    for canto in topo:
+        folha.linha(*canto, *min(cumeeira, key=lambda c: math.dist(c, canto)), PENA_FINA)
+    folha.linha(*cumeeira[0], *cumeeira[1], PENA_MEDIA)
+    for andar in (CONTRAPISO + PE_DIREITO_1, ):
+        folha.linha(*ponto(0, 0, andar), *ponto(largura, 0, andar), PENA_FINA)
+    folha.texto_shx(margem + 10, 18, "FICTICIO", escala=1.5, comentario=False)
+
+
+def _gravar_comentarios(pdf: bytes, por_pagina: list[list[tuple]]) -> bytes:
+    """Comentários invisíveis do tipo "Square" com o texto SHX, como grava o AutoCAD."""
+    if not any(por_pagina):
+        return pdf
+    documento = pymupdf.open(stream=pdf)
+    for pagina, anotacoes in zip(documento, por_pagina, strict=True):
+        altura = pagina.rect.height
+        for texto, x0, y0, x1, y1 in anotacoes:
+            retangulo = pymupdf.Rect(x0 * MM, altura - y1 * MM, x1 * MM, altura - y0 * MM)
+            anotacao = pagina.add_rect_annot(retangulo)
+            anotacao.set_info(content=texto, title="AutoCAD SHX Text",
+                              creationDate="D:20260915000000", modDate="D:20260915000000")
+            anotacao.set_border(width=0)
+            anotacao.set_opacity(0)
+            anotacao.update()
+    resultado = documento.tobytes(garbage=3, deflate=True, no_new_id=True)
+    documento.close()
+    return resultado
+
+
 def _novo_canvas(projeto: Projeto) -> tuple[canvas.Canvas, io.BytesIO]:
     largura, altura = TAMANHOS_MM[projeto.variacao.formato]
     buffer = io.BytesIO()
@@ -827,23 +1025,30 @@ def _novo_canvas(projeto: Projeto) -> tuple[canvas.Canvas, io.BytesIO]:
     return c, buffer
 
 
+def _sequencia(projeto: Projeto) -> list[Callable[[Folha], None]]:
+    """Folhas na ordem: capa (opcional), as três técnicas e a perspectiva (opcional)."""
+    v = projeto.variacao
+    tecnicas = [lambda folha, i=i, f=f: f(folha, i) for i, f in enumerate(FOLHAS)]
+    return ([folha_capa] if v.capa else []) + tecnicas + (
+        [folha_perspectiva] if v.perspectiva else [])
+
+
 def gerar_pdfs(projeto: Projeto) -> list[tuple[str, bytes]]:
     """Gera as folhas em memória: [(nome do arquivo, bytes do PDF)]."""
+    sequencia = _sequencia(projeto)
+    grupos = [sequencia] if projeto.variacao.arquivo_unico else [[f] for f in sequencia]
     resultado = []
-    if projeto.variacao.arquivo_unico:
+    for numero, grupo in enumerate(grupos, start=1):
         c, buffer = _novo_canvas(projeto)
-        for indice, desenhar in enumerate(FOLHAS):
-            desenhar(Folha(c, projeto), indice)
+        comentarios = []
+        for desenhar in grupo:
+            folha = Folha(c, projeto)
+            desenhar(folha)
+            comentarios.append(folha.anotacoes)
             c.showPage()
         c.save()
-        resultado.append(("pranchas.pdf", buffer.getvalue()))
-        return resultado
-    for indice, desenhar in enumerate(FOLHAS):
-        c, buffer = _novo_canvas(projeto)
-        desenhar(Folha(c, projeto), indice)
-        c.showPage()
-        c.save()
-        resultado.append((f"prancha_{indice + 1:02d}.pdf", buffer.getvalue()))
+        nome = "pranchas.pdf" if projeto.variacao.arquivo_unico else f"prancha_{numero:02d}.pdf"
+        resultado.append((nome, _gravar_comentarios(buffer.getvalue(), comentarios)))
     return resultado
 
 

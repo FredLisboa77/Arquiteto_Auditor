@@ -45,6 +45,7 @@ CORES_PAPEL = {
     "amarelado": (250, 245, 222),
     "azulado": (246, 250, 253),
     "envelhecido": (246, 240, 222),
+    "branco_puro": (255, 255, 255),
 }
 
 TINTA_PRETA = (25, 25, 30)
@@ -68,12 +69,19 @@ class Qualidade:
     sujeira: int  # pontos de sujeira por página
     desbotamento: float  # 0 = tinta forte; 1 = tinta some
     colorido: bool
+    escala_na_folha: float = 1.0  # < 1: a imagem não ocupa a folha toda (margem branca)
+    sombra_bordas: bool = False  # faixas escuras nas bordas (cópia de cópia)
+    fracao_redigitalizada: float = 0.0  # parte das páginas digitalizada de novo, a 200 dpi
 
 
 QUALIDADES: dict[str, Qualidade] = {
     "boa": Qualidade("boa", 300, 0.4, 3.0, 0.0, 70, 10, 0.0, True),
     "media": Qualidade("media", 200, 1.8, 8.0, 0.5, 65, 120, 0.2, True),
     "ruim": Qualidade("ruim", 150, 3.0, 14.0, 0.7, 45, 300, 0.35, False),
+    # Cópia de cópia, como o código de obras real (docs/06 §6.1): baixa resolução, papel
+    # branco "limpo", margem branca em volta, sombras nas bordas e páginas refeitas a 200 dpi.
+    "copia": Qualidade("copia", 135, 0.9, 4.0, 0.3, 45, 20, 0.0, True,
+                       escala_na_folha=0.9, sombra_bordas=True, fracao_redigitalizada=0.17),
 }
 
 
@@ -262,13 +270,16 @@ def posicoes_das_palavras(linha: Linha, estilo: Estilo) -> list[tuple[float, str
 
 
 class _Desenhista:
-    def __init__(self, estilo: Estilo, qualidade: Qualidade, rng: random.Random):
+    def __init__(self, estilo: Estilo, qualidade: Qualidade, rng: random.Random,
+                 imagem: Image.Image | None = None):
         self.e = estilo
         self.q = qualidade
         self.rng = rng
         self.escala = qualidade.dpi / 72  # pixels por ponto
-        largura, altura = (round(v * self.escala) for v in estilo.tamanho_pt)
-        self.imagem = Image.new("RGB", (largura, altura), (255, 255, 255))
+        if imagem is None:  # página nova, em branco
+            largura, altura = (round(v * self.escala) for v in estilo.tamanho_pt)
+            imagem = Image.new("RGB", (largura, altura), (255, 255, 255))
+        self.imagem = imagem
         self.d = ImageDraw.Draw(self.imagem)
 
     def px(self, pt: float) -> float:
@@ -554,6 +565,74 @@ def degradar(imagem: Image.Image, qualidade: Qualidade, rng: random.Random,
     if not qualidade.colorido:
         imagem = imagem.convert("L")
     return imagem
+
+
+# ---------------------------------------------------------------- cópia de um PDF de texto
+
+
+def _sombras_nas_bordas(imagem: Image.Image, rng: random.Random) -> None:
+    """Faixas escuras e interrompidas perto das bordas laterais (cópia de cópia)."""
+    d = ImageDraw.Draw(imagem)
+    largura, altura = imagem.size
+    for lado in (0, 1):
+        x = largura * (rng.uniform(0.01, 0.03) if lado == 0 else rng.uniform(0.95, 0.98))
+        y = rng.uniform(0, altura * 0.05)
+        while y < altura:
+            comprimento = rng.uniform(0.03, 0.12) * altura
+            espessura = rng.uniform(0.004, 0.012) * largura
+            d.rectangle([x, y, x + espessura, y + comprimento], fill=(70, 70, 75))
+            y += comprimento + rng.uniform(0.01, 0.08) * altura
+
+
+def _rubrica_e_numero(imagem: Image.Image, numero: int, dpi: int, rng: random.Random) -> None:
+    """Rubrica azul e número da página no canto inferior direito (cópia autenticada)."""
+    des = _Desenhista(ESTILO_PADRAO, replace(QUALIDADES["boa"], dpi=dpi), rng, imagem)
+    largura, altura = imagem.size
+    des.rubrica(largura * 0.62, altura * 0.89, largura * 0.12)
+    fonte = _fonte("arial", False, round(des.px(10)))
+    des.d.text((largura * 0.80, altura * 0.885), str(numero), font=fonte, fill=TINTA_PRETA)
+
+
+def escanear_pdf(pdf: bytes, qualidade: str | Qualidade, semente: int,
+                 rubricar: bool = True) -> DocumentoEscaneado:
+    """Imprime (rasteriza) um PDF de texto e o "escaneia": vira um PDF só com imagens.
+
+    A verdade do OCR é o texto selecionável do PDF original, página a página.
+    """
+    q = QUALIDADES[qualidade] if isinstance(qualidade, str) else qualidade
+    rng = random.Random(semente)
+    estilo = replace(ESTILO_PADRAO, cor_papel="branco_puro")
+    original = pymupdf.open(stream=pdf)
+    saida = pymupdf.open()
+    textos = []
+    for numero, pagina in enumerate(original, start=1):
+        textos.append("\n".join(" ".join(linha.split())
+                                 for linha in pagina.get_text().splitlines() if linha.strip()))
+        dpi = 200 if rng.random() < q.fracao_redigitalizada else q.dpi
+        pixmap = pagina.get_pixmap(dpi=dpi, colorspace=pymupdf.csRGB, alpha=False)
+        imagem = Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
+        if rubricar:
+            _rubrica_e_numero(imagem, numero, dpi, rng)
+        if q.escala_na_folha < 1:
+            folha = Image.new("RGB", imagem.size, (255, 255, 255))
+            menor = imagem.resize((round(imagem.width * q.escala_na_folha),
+                                   round(imagem.height * q.escala_na_folha)), Image.LANCZOS)
+            folha.paste(menor, ((folha.width - menor.width) // 2,
+                                (folha.height - menor.height) // 2))
+            imagem = folha
+        if q.sombra_bordas:
+            _sombras_nas_bordas(imagem, rng)
+        imagem = degradar(imagem, replace(q, dpi=dpi), rng, estilo)
+        buffer = io.BytesIO()
+        imagem.save(buffer, format="JPEG", quality=q.jpeg, dpi=(dpi, dpi))
+        nova = saida.new_page(width=pagina.rect.width, height=pagina.rect.height)
+        nova.insert_image(nova.rect, stream=buffer.getvalue())
+    saida.set_metadata({"producer": "Scanner fictício (Arquiteto Auditor - dados sintéticos)",
+                        "title": "DOCUMENTO FICTÍCIO"})
+    resultado = saida.tobytes(garbage=3, deflate=True, no_new_id=True)
+    saida.close()
+    original.close()
+    return DocumentoEscaneado(resultado, textos, q.inclinacao_max)
 
 
 # ---------------------------------------------------------------- PDF

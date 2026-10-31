@@ -16,11 +16,13 @@ import random
 from dataclasses import dataclass, field
 from datetime import date
 
+from PIL import Image, ImageDraw
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
+from reportlab.platypus import Image as ImagemPlatypus
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from dados_sinteticos.geradores.desenho import formatar_numero  # registra as fontes Vera
@@ -84,8 +86,9 @@ def gerar_memorial(projeto: Projeto) -> Memorial:
     identificacao += [
         ("Autor(a) do projeto", f"{ident.autor} - {ident.registro_autor}"),
         ("RRT", ident.rrt),
-        ("Revisão", ident.revisao),
     ]
+    if not p.variacao.revisao_em_branco:  # espelha o carimbo
+        identificacao.append(("Revisão", ident.revisao))
 
     terreno = [f"O terreno possui área de {n(p.area_terreno_prancha)} m², conforme matrícula"]
     if "testada" not in omitidas:
@@ -218,6 +221,108 @@ def _assinantes(memorial: Memorial) -> list[tuple[str, str, bool]]:
         assinantes.append((memorial.proprietario, "Proprietário(a)",
                            memorial.assinado_proprietario))
     return assinantes
+
+
+# ---------------------------------------------------------------- memorial narrativo
+
+
+def _quadro_como_imagem(linhas: list[tuple[str, str]]) -> bytes:
+    """Quadro de áreas desenhado como imagem (como um quadro colado do CAD no Word)."""
+    from dados_sinteticos.geradores.escaneado import _fonte
+
+    escala = 150 / 72  # 150 dpi
+    altura_linha, largura = round(16 * escala), round(330 * escala)
+    imagem = Image.new("RGB", (largura, altura_linha * (len(linhas) + 1) + 2), "white")
+    d = ImageDraw.Draw(imagem)
+    fonte, negrito = _fonte("arial", False, round(9 * escala)), _fonte("arial", True,
+                                                                        round(9 * escala))
+    divisa = round(largura * 0.68)
+    for i, (rotulo, valor) in enumerate([("QUADRO DE ÁREAS", ""), *linhas]):
+        y = i * altura_linha
+        d.rectangle([0, y, largura - 1, y + altura_linha], outline="black", width=2)
+        d.line([divisa, y, divisa, y + altura_linha], fill="black", width=2)
+        d.text((8, y + altura_linha / 2), rotulo, font=negrito if i == 0 else fonte, fill="black",
+               anchor="lm")
+        d.text((largura - 8, y + altura_linha / 2), valor, font=fonte, fill="black", anchor="rm")
+    buffer = io.BytesIO()
+    imagem.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+@dataclass
+class MemorialNarrativo:
+    pdf: bytes
+    texto_da_imagem: list[str]  # verdade do OCR do quadro de áreas (que é imagem)
+
+
+def gerar_memorial_narrativo(projeto: Projeto) -> MemorialNarrativo:
+    """Memorial curto, em texto corrido, como o exemplo real (docs/06 §6.2).
+
+    Lista os ambientes com a área útil (as mesmas das plantas, mais deck e piscina) e resume
+    os números numa frase; o quadro de áreas é uma IMAGEM (só o OCR consegue lê-lo).
+    """
+    from dados_sinteticos.geradores.pranchas import AMBIENTES_SUPERIOR, AMBIENTES_TERREO, area_util
+
+    p, ident, e, a = projeto, projeto.identificacao, projeto.edificacao, projeto.apresentacao
+    rng = random.Random(p.semente * 71)
+
+    def ambientes(lista) -> list[str]:
+        return [f"{nome.lower() if i else nome} ({n(area_util(e, amb))}m²)"
+                for i, (nome, amb) in enumerate((amb[0], amb) for amb in lista
+                                                if amb[5] is not None)]
+
+    terreo = ambientes(AMBIENTES_TERREO)
+    if rng.random() < 0.6:
+        terreo += [f"deck ({n(rng.choice([18.5, 24.0, 32.4]))}m²)",
+                   f"piscina ({n(rng.choice([18.0, 24.0, 28.3]))}m²)"]
+    superior = ambientes(AMBIENTES_SUPERIOR)
+    resumo = (f"A edificação em questão possui área construída total de "
+              f"{n(p.area_total_memorial)}m², a área permeável é de {n(e.area_permeavel)}m², "
+              f"resultando uma taxa de permeabilidade de {n(p.tp_prancha)}%; a taxa de ocupação "
+              f"é {n(p.to_prancha)}%, coeficiente de aproveitamento {n(p.ca_prancha)}")
+    if "altura_total" not in a.cotas_omitidas:
+        resumo += f", totalizando {n(e.altura)}m de altura"
+    quadro = [("Área do terreno", f"{n(p.area_terreno_prancha)} m²"),
+              ("Área construída térreo", f"{n(e.areas_pavimentos[0])} m²"),
+              ("Área construída superior", f"{n(e.areas_pavimentos[1])} m²"),
+              ("Área construída total", f"{n(p.area_total_memorial)} m²"),
+              ("Área de projeção", f"{n(e.projecao)} m²"),
+              ("Área permeável", f"{n(e.area_permeavel)} m²"),
+              ("Taxa de ocupação", f"{n(p.to_prancha)} %"),
+              ("Coeficiente de aproveitamento", n(p.ca_prancha)),
+              ("Taxa de permeabilidade", f"{n(p.tp_prancha)} %")]
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm,
+                            topMargin=15 * mm, bottomMargin=15 * mm,
+                            title="MEMORIAL DESCRITIVO - DOCUMENTO FICTÍCIO",
+                            author=ident.autor, invariant=True)
+    normal = ParagraphStyle("n", parent=_NORMAL, fontSize=11, leading=15)
+    elementos = [Paragraph("MEMORIAL DESCRITIVO", _TITULO), Paragraph("_" * 54, _CENTRO),
+                 Paragraph(AVISO_FICTICIO, _CENTRO), Spacer(1, 6 * mm)]
+    if a.mostrar_proprietario:
+        elementos.append(Paragraph(f"<b>Proprietário:</b> {ident.proprietario}", normal))
+    elementos += [
+        Paragraph(f"<b>Endereço:</b> {ident.endereco}, Lote {ident.lote}, Quadra "
+                  f"{ident.quadra}, {ident.condominio}, {ident.municipio}.", normal),
+        Spacer(1, 4 * mm),
+        Paragraph("Trata-se de uma edificação unifamiliar de dois pavimentos, contendo os "
+                  "seguintes ambientes:", normal),
+        Paragraph(f"Térreo: {', '.join(terreo[:-1])} e {terreo[-1]}.", normal),
+        Paragraph(f"Superior: {', '.join(superior[:-1])} e {superior[-1]}.", normal),
+        Paragraph(resumo + ".", normal),
+        Paragraph("Quadro de áreas:", normal),
+        Spacer(1, 2 * mm),
+        ImagemPlatypus(io.BytesIO(_quadro_como_imagem(quadro)), width=120 * mm,
+                       height=120 * mm * (len(quadro) + 1) * 16 / 330),
+        Spacer(1, 18 * mm),
+        Paragraph("_" * 45, _CENTRO),
+        Paragraph(f"{ident.autor.upper()}<br/>Arquiteto(a) e Urbanista - {ident.registro_autor}",
+                  _CENTRO),
+    ]
+    doc.build(elementos)
+    linhas_imagem = ["QUADRO DE ÁREAS", *[f"{rotulo} {valor}" for rotulo, valor in quadro]]
+    return MemorialNarrativo(buffer.getvalue(), linhas_imagem)
 
 
 # ---------------------------------------------------------------- versão escaneada

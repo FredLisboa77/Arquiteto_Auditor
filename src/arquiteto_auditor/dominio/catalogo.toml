@@ -191,7 +191,15 @@ descricao = "Número de pavimentos menor ou igual ao máximo permitido."
 chave = "MURO_ALTURA_MAX"
 nome = "Altura máxima de muro"
 tipo = "parametro"
-descricao = "Altura dos muros e fechamentos (frente e divisas) menor ou igual à máxima permitida, e coerente entre corte, fachada e memorial."
+descricao = "Altura dos muros e fechamentos (frente e divisas) menor ou igual à máxima permitida, e coerente entre corte, fachada e memorial. Quando a norma distingue a posição do muro, há um item por posição (escopo opcional: frente, fundos ou lateral)."
+escopo = "posicao"
+escopo_opcional = true
+
+[[verificacao]]
+chave = "AREA_CONSTR_MIN"
+nome = "Área construída mínima"
+tipo = "parametro"
+descricao = "Área construída total maior ou igual à mínima exigida (em geral, pelas normas do condomínio). Só se aplica quando algum documento define o limite."
 
 # ------------------------------------------------------------------ Completude e apresentação
 

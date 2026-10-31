@@ -1,0 +1,7 @@
+# Arquivos binários: o Git nunca deve converter quebras de linha neles
+# (um PDF alterado fica corrompido e perde a assinatura digital).
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.docx binary

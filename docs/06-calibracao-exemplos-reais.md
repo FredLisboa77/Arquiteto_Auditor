@@ -91,3 +91,39 @@
 | **Rubrica na margem direita** de cada página da escritura. | Distração para o OCR (rabisco na margem). |
 | **Espaço em branco anulado com riscos diagonais** depois do fim do texto. | Distração: não interpretar os riscos como desenho ou texto. |
 | Fecho: data e local centralizados, assinaturas azuis, carimbos (retangular e redondo, girados) e **selo com QR code** e texto ao lado. | O selo é uma área à parte; o QR code não é lido. |
+
+---
+
+## 6. Memorial, código de obras e normas do condomínio
+
+> Registro de 31/10/2026. Fontes: um memorial descritivo (1 página, texto), um código de obras municipal (103 páginas, escaneado) e as normas construtivas de um condomínio (7 páginas, texto). Os textos foram vistos só na versão mascarada (`scripts/mascarar_pdf.py`); o escaneado, só por estatísticas e por 8 páginas mascaradas (`scripts/mascarar_escaneado.py`), conferidas pelo usuário antes. Nenhum dado foi copiado.
+
+### 6.1 Código de obras (escaneado)
+| Achado | Consequência |
+|---|---|
+| Todas as páginas são imagem, JPEG colorido de **baixa resolução: 135 dpi** em 85 páginas e ~200 dpi em 18 (redigitalizadas e misturadas no mesmo arquivo). | O OCR (Fase 5) precisa funcionar a 135 dpi e tolerar resolução variável dentro do documento. |
+| A imagem ocupa ~81% da folha (margem branca em volta); papel branco "limpo" pelo scanner; inclinação de 0 a 0,9°. | Nível de qualidade sintético "cópia": 135 dpi, papel branco, imagem reduzida na folha. |
+| **Sombras verticais nas duas bordas** (cópia de cópia). | Ignorar as faixas escuras das bordas no OCR. |
+| **Papel timbrado em toda página** (brasão + 2 a 3 linhas do órgão) e **rubrica azul + número da página** no canto inferior direito. | Remover cabeçalho e rodapé repetidos antes de interpretar os artigos. |
+| Carimbo retangular com anotação à mão na 1ª página. | Distração. |
+| Tabela pequena no meio do texto e, nos anexos, **tabela grande com células mescladas** (categorias ocupando várias linhas). | A extração de parâmetros (Fase 8) precisa ler tabelas escaneadas com células mescladas. |
+
+### 6.2 Memorial descritivo (texto, 1 página, assinado digitalmente)
+| Achado | Consequência |
+|---|---|
+| Sem seções: um parágrafo narrativo com a **lista de ambientes e suas áreas** por pavimento (inclusive deck e piscina) e uma frase-resumo com área construída total, área permeável, TP, TO, CA e altura. | Extração por frase (Fase 7); as áreas dos ambientes são distrações. |
+| O **quadro de áreas é uma imagem** colada no PDF de texto. | Mesmo em PDF vetorial, imagens embutidas precisam de OCR (Fase 5). |
+| Números com vírgula e unidade colada ("214,30m²"); sem recuos nem matrícula. | O memorial nem sempre tem todos os campos; ausência não é erro. |
+
+### 6.3 Normas construtivas do condomínio (texto, 7 páginas)
+| Achado | Consequência |
+|---|---|
+| Itens numerados (1 a 41) com subitens (25.1, 31.3) e seções em algarismos romanos. | Âncora para citar o trecho (item) na Fase 8. |
+| **Ponto decimal com número por extenso**: "3.00 m (três metros)"; no mesmo documento aparece "2,00 m". | O normalizador lê os dois formatos e confere com o extenso. |
+| O condomínio define **muitos parâmetros**: TO, TP, altura máxima, recuos frontal, de fundos e lateral, nº de pavimentos e **área construída mínima**. | Conflitos frequentes com a prefeitura; vale a prefeitura e o valor do condomínio vira observação (princípio 7). Novo item `AREA_CONSTR_MIN`. |
+| **Altura do muro por posição**: frente proibida; fundos 2,20 m; laterais 0,80 m até o fim do recuo frontal, subindo a 45° até 2,20 m. O muro do próprio condomínio (2,50 m) é distração. | `MURO_ALTURA_MAX` ganha escopo opcional `posicao=frente|fundos|lateral`. |
+| Recuo lateral exigido "em pelo menos uma lateral"; cota de implantação (+20 a +40 cm); beiral a 40 cm da divisa; tapume; calçada a 2%. | Regras com semântica própria; distrações numéricas. |
+
+### 6.4 Decisões do usuário (31/10/2026)
+- Altura de muro: segue o documento da prefeitura; se ela não define, vale o condomínio (inclusive por posição).
+- Parâmetro que a prefeitura não define (ex.: área construída mínima): vale o do condomínio.

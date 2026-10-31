@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from dados_sinteticos.geradores import fonte_shx
 from dados_sinteticos.geradores.especificacao import Projeto
 
 MM = 72 / 25.4
@@ -52,6 +54,8 @@ class Folha:
         self.v = projeto.variacao
         self.fonte = TAMANHO_FONTE[self.v.formato]
         self.largura_mm, self.altura_mm = TAMANHOS_MM[self.v.formato]
+        # Comentários "Square" que o AutoCAD grava para o texto SHX: (texto, x0, y0, x1, y1 mm)
+        self.anotacoes: list[tuple[str, float, float, float, float]] = []
 
     # ------------------------------------------------ primitivas
 
@@ -71,7 +75,18 @@ class Folha:
         self.c.rect(r.x * MM, r.y * MM, r.largura * MM, r.altura * MM)
         self.c.setDash()
 
-    def texto(self, x, y, s, escala=1.0, negrito=False, alinhamento="esquerda", angulo=0):
+    def texto(self, x, y, s, escala=1.0, negrito=False, alinhamento="esquerda", angulo=0,
+              ttf=False, rotulo_carimbo=False):
+        """Escreve um texto. Nos modos CAD, vira traços SHX + comentário.
+
+        `ttf=True` força TrueType (ex.: a marca de documento fictício). `rotulo_carimbo=True`
+        mantém TrueType no modo "misto" (rótulos em texto, valores em comentário).
+        """
+        modo = self.v.texto_cad
+        usar_shx = not ttf and (modo == "shx" or (modo == "misto" and not rotulo_carimbo))
+        if usar_shx:
+            self.texto_shx(x, y, s, escala, alinhamento, angulo)
+            return
         self.c.saveState()
         self.c.setFont("VeraBd" if negrito else "Vera", self.fonte * escala)
         self.c.translate(x * MM, y * MM)
@@ -81,6 +96,34 @@ class Folha:
                     "direita": self.c.drawRightString}[alinhamento]
         desenhar(0, 0, s)
         self.c.restoreState()
+
+    def texto_shx(self, x, y, s, escala=1.0, alinhamento="esquerda", angulo=0,
+                  comentario=True):
+        """Texto desenhado com a fonte de traços (como o SHX exportado pelo AutoCAD)."""
+        altura = self.altura_texto(escala) * 0.72  # altura das maiúsculas
+        k = altura / fonte_shx.ALTURA
+        largura = fonte_shx.largura(s) * k
+        deslocamento = {"esquerda": 0.0, "centro": -largura / 2, "direita": -largura}[alinhamento]
+        self.c.saveState()
+        self.c.translate(x * MM, y * MM)
+        if angulo:
+            self.c.rotate(angulo)
+        self.c.setLineWidth(max(0.12, altura * 0.08) * MM)
+        for traco in fonte_shx.tracos(s):
+            caminho = self.c.beginPath()
+            caminho.moveTo((deslocamento + traco[0][0] * k) * MM, traco[0][1] * k * MM)
+            for px, py in traco[1:]:
+                caminho.lineTo((deslocamento + px * k) * MM, py * k * MM)
+            self.c.drawPath(caminho, stroke=1, fill=0)
+        self.c.restoreState()
+        if comentario and s.strip():
+            cru = s.replace("%", "%%%") if self.v.codigos_cad else s
+            cantos = [(deslocamento + dx, dy) for dx in (0, largura)
+                      for dy in (-0.2 * altura, 1.2 * altura)]
+            seno, cosseno = math.sin(math.radians(angulo)), math.cos(math.radians(angulo))
+            xs = [x + cx * cosseno - cy * seno for cx, cy in cantos]
+            ys = [y + cx * seno + cy * cosseno for cx, cy in cantos]
+            self.anotacoes.append((cru, min(xs), min(ys), max(xs), max(ys)))
 
     def altura_texto(self, escala=1.0) -> float:
         return self.fonte * escala / MM

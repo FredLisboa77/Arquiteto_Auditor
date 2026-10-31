@@ -13,7 +13,7 @@ def test_base_tem_ao_menos_seis_conjuntos_variados():
     assert len(CONJUNTOS) >= 6
     projetos = [montar_projeto(d) for d in CONJUNTOS]
     assert {p.variacao.estilo_carimbo for p in projetos} == {0, 1, 2, 3}
-    assert {p.variacao.estilo_quadro for p in projetos} == {0, 1, 2, 3}
+    assert {0, 1, 2, 3, 4} <= {p.variacao.estilo_quadro for p in projetos}
     assert {p.variacao.formato for p in projetos} == {"A1", "A2", "A3"}
 
 

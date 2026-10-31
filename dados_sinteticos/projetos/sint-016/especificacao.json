@@ -1,0 +1,147 @@
+{
+  "semente": 116,
+  "identificacao": {
+    "titulo": "RESIDÊNCIA NOGUEIRA",
+    "autor": "Ana Cecília Albuquerque Sá",
+    "registro_autor": "CAU A166314-0",
+    "rrt": "12020552",
+    "revisao": "R00",
+    "endereco": "Alameda dos Flamboyants, 505",
+    "lote": "16",
+    "quadra": "E",
+    "condominio": "Jardins do Peixoto",
+    "municipio": "Serra Souza",
+    "matricula": "95.651",
+    "cartorio": "2º Ofício de Registro de Imóveis de Serra Souza",
+    "proprietario": "Isaque Sousa Cardoso",
+    "cpf_proprietario": "969.171.585-67",
+    "escritorio": "Estúdio Mendes Arquitetura"
+  },
+  "terreno": {
+    "testada": 12.0,
+    "profundidade": 32.0
+  },
+  "edificacao": {
+    "largura": 8.0,
+    "profundidade": 16.8,
+    "recuo_frontal": 6.0,
+    "recuo_lateral_e": 2.0,
+    "areas_pavimentos": [
+      134.4,
+      107.52
+    ],
+    "altura": 9.5,
+    "muro_altura": 2.6,
+    "area_permeavel": 96.0
+  },
+  "prefeitura": {
+    "lote_area_min": 250.0,
+    "testada_min": 8.0,
+    "recuo_frontal_min": 5.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 2.0,
+    "to_max": 45.0,
+    "ca_max": 1.0,
+    "permeavel_min": 20.0,
+    "altura_max": 9.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": null,
+    "area_construida_min": null
+  },
+  "condominio": {
+    "lote_area_min": null,
+    "testada_min": null,
+    "recuo_frontal_min": 3.0,
+    "recuo_lateral_min": 1.5,
+    "recuo_fundos_min": 1.5,
+    "to_max": 60.0,
+    "ca_max": null,
+    "permeavel_min": 20.0,
+    "altura_max": 10.0,
+    "pavimentos_max": 2,
+    "muro_altura_max": 2.2,
+    "area_construida_min": 100.0
+  },
+  "variacao": {
+    "estilo_carimbo": 3,
+    "estilo_quadro": 2,
+    "formato": "A1",
+    "decimal_ponto": false,
+    "cotas_rotuladas": false,
+    "caixa_alta": true,
+    "arquivo_unico": false,
+    "estilo_software": "revit",
+    "estilo_norte": "rosa",
+    "texto_cad": "ttf",
+    "codigos_cad": false,
+    "notacao_cad": false,
+    "vizinhos_com_area": false,
+    "folha_empilhada": false,
+    "capa": false,
+    "perspectiva": false,
+    "revisao_em_branco": false
+  },
+  "apresentacao": {
+    "area_terreno": null,
+    "area_total": null,
+    "area_total_memorial": null,
+    "to_declarada": null,
+    "matricula": null,
+    "revisao_por_folha": {},
+    "mostrar_proprietario": true,
+    "mostrar_norte": true,
+    "cotas_omitidas": [],
+    "assinatura_autor": true,
+    "assinatura_proprietario": true,
+    "assinatura_alterada": false
+  },
+  "erros": [
+    "muro_alto",
+    "altura_excedida"
+  ],
+  "numero_folhas": 3,
+  "derivados": {
+    "area_terreno": 384.0,
+    "projecao": 134.4,
+    "recuo_lateral_d": 2.0,
+    "recuo_fundos": 9.2,
+    "area_total": 241.92,
+    "to": 35.0,
+    "ca": 0.63,
+    "tp": 25.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 384.0,
+      "proprietario_atual": "Isaque Sousa Cardoso",
+      "onus_ativos": [
+        "R-3/95.651"
+      ],
+      "atos": [
+        "R-1 COMPRA E VENDA (18/08/2011)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (11/08/2012)",
+        "R-3 ALIENAÇÃO FIDUCIÁRIA (07/11/2013)",
+        "R-4 COMPRA E VENDA (12/01/2014)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-4",
+      "data": "10/12/2013",
+      "valor": 530000,
+      "area_descrita": 384.0,
+      "area_diferente_da_atual": false
+    }
+  },
+  "legislacao": {
+    "lei_modelo": "C",
+    "zona": "ZR-2",
+    "valor_revogado": null,
+    "norma_condominio": "texto",
+    "norma_modelo": "numerada",
+    "lei_escaneada": "copia",
+    "limiar_area_lote": 600.0
+  }
+}

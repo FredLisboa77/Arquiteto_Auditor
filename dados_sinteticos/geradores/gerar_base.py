@@ -21,6 +21,7 @@ from pathlib import Path
 
 from arquiteto_auditor.avaliacao.gabarito import Gabarito
 from dados_sinteticos.geradores.assinatura import Assinante, assinar_pdf
+from dados_sinteticos.geradores.escaneado import escanear_pdf
 from dados_sinteticos.geradores.escritura import Escritura, gerar_escritura_escaneada
 from dados_sinteticos.geradores.especificacao import (
     Projeto,
@@ -40,6 +41,7 @@ from dados_sinteticos.geradores.legislacao import (
 from dados_sinteticos.geradores.memorial import (
     gerar_memorial,
     gerar_memorial_escaneado,
+    gerar_memorial_narrativo,
     gerar_memorial_pdf,
 )
 from dados_sinteticos.geradores.pranchas import gerar_pdfs
@@ -58,11 +60,26 @@ class DefinicaoConjunto:
     reservado: bool = False  # reservado para avaliação (não usar ao desenvolver regras)
     matricula: tuple[str, str] = ("certidao", "boa")  # (estilo, qualidade do escaneamento)
     escritura: str = "boa"  # qualidade do escaneamento
-    memorial: str = "texto"  # "texto" (digitado e assinado digitalmente) ou qualidade do escaneado
+    memorial: str = "texto"  # "texto", "narrativo" (1 página, quadro como imagem) ou qualidade
     norma: str = "texto"  # norma do condomínio: "texto" ou qualidade do escaneado
+    norma_modelo: str = "artigos"  # "artigos" ou "numerada" (itens 1, 2, 3...)
+    lei: str | None = None  # modelo da lei ("A", "B" ou "C"); None = pela semente
+    lei_escaneada: str | None = None  # qualidade da cópia escaneada da lei (None = texto)
+    condominio: dict = field(default_factory=dict)  # parâmetros a mais definidos pelo condomínio
     rodada: str = "R00"  # revisão do projeto (R01 = mesmo projeto, corrigido)
     conjunto_anterior: str | None = None  # conjunto da rodada anterior (para R01)
 
+
+# Condomínio que define muitos parâmetros, como nas normas reais (docs/06 §6.3); vários
+# conflitam com a prefeitura, que prevalece.
+_CONDOMINIO_DETALHADO = {"area_construida_min": 100.0, "recuo_frontal_min": 3.0,
+                         "recuo_fundos_min": 1.5, "recuo_lateral_min": 1.5, "to_max": 60.0,
+                         "permeavel_min": 20.0, "altura_max": 10.0, "pavimentos_max": 2}
+
+# Variação comum às pranchas "estilo AutoCAD"
+_CAD = {"estilo_quadro": 4, "estilo_norte": "rosa_girada", "decimal_ponto": True,
+        "cotas_rotuladas": False, "caixa_alta": True, "codigos_cad": True, "notacao_cad": True,
+        "vizinhos_com_area": True, "estilo_software": "autocad"}
 
 CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
     DefinicaoConjunto(
@@ -107,12 +124,54 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
         "sint-010", 109, ("to_excedida", "muro_alto", "cota_omitida:altura_total"),
         {"estilo_carimbo": 1, "estilo_quadro": 0, "formato": "A2", "arquivo_unico": True},
         rodada="R01", conjunto_anterior="sint-009"),
+    # Pranchas no estilo do AutoCAD, calibradas com exemplos reais (docs/06 §4): texto SHX
+    # (traços) com o conteúdo em comentários, códigos "%%%", "A=/C=/H=", "MURO H=", lotes
+    # vizinhos com área, rosa dos ventos girada com "E", folha "N de M", capa e folha sem texto.
+    DefinicaoConjunto(
+        "sint-011", 111, ("area_terreno_divergente", "muro_alto"),
+        {**_CAD, "texto_cad": "misto", "estilo_carimbo": 0, "formato": "A2",
+         "arquivo_unico": True, "folha_empilhada": True, "capa": True, "perspectiva": True,
+         "revisao_em_branco": True},
+        matricula=("ficha", "boa")),
+    DefinicaoConjunto(
+        "sint-012", 112,
+        ("recuo_frontal_insuficiente", "sem_assinatura_proprietario",
+         "cota_omitida:recuo_lateral_d"),
+        {**_CAD, "texto_cad": "shx", "estilo_carimbo": 2, "formato": "A1",
+         "arquivo_unico": False, "perspectiva": True},
+        escritura="media"),
+    DefinicaoConjunto(
+        "sint-013", 113, ("to_declarada_errada", "altura_excedida", "soma_areas_errada"),
+        {**_CAD, "texto_cad": "misto", "estilo_carimbo": 3, "formato": "A1",
+         "arquivo_unico": True, "folha_empilhada": True, "capa": True},
+        reservado=True, memorial="boa"),
+    # Calibração com memorial, código de obras e normas de condomínio reais (docs/06 §6):
+    # lei escaneada em "cópia de cópia" (135 dpi) com tabela de células mescladas e valores
+    # por faixa de área do lote; memorial narrativo com o quadro de áreas como imagem; normas
+    # numeradas (ponto decimal + extenso, muro por posição). O condomínio define muitos
+    # parâmetros, e os erros violam a prefeitura sem violar o condomínio (hierarquia).
+    DefinicaoConjunto(
+        "sint-014", 114, ("to_excedida",),
+        {"estilo_carimbo": 2, "estilo_quadro": 1, "formato": "A2"},
+        memorial="narrativo", norma_modelo="numerada", lei="C", lei_escaneada="copia",
+        condominio=_CONDOMINIO_DETALHADO),
+    DefinicaoConjunto(
+        "sint-015", 115, ("memorial_area_divergente", "recuo_frontal_insuficiente"),
+        {"estilo_carimbo": 0, "estilo_quadro": 3, "formato": "A3"},
+        memorial="narrativo", norma="copia", norma_modelo="numerada", lei="C",
+        condominio=_CONDOMINIO_DETALHADO),
+    DefinicaoConjunto(
+        "sint-016", 116, ("muro_alto", "altura_excedida"),
+        {"estilo_carimbo": 3, "estilo_quadro": 2, "formato": "A1"}, reservado=True,
+        memorial="narrativo", norma_modelo="numerada", lei="C", lei_escaneada="copia",
+        condominio=_CONDOMINIO_DETALHADO),
 )
 
 
 def montar_projeto(definicao: DefinicaoConjunto) -> Projeto:
     base = gerar_projeto_base(definicao.semente)
     base.identificacao.revisao = definicao.rodada
+    base.condominio = dataclasses.replace(base.condominio, **definicao.condominio)
     projeto = aplicar_erros(base, list(definicao.erros))
     projeto.variacao = dataclasses.replace(projeto.variacao, **definicao.variacao)
     return projeto
@@ -147,7 +206,11 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
     }
 
     memorial = gerar_memorial(projeto)
-    if definicao.memorial == "texto":  # digitado: assinado como as pranchas (sem alteração)
+    if definicao.memorial == "narrativo":  # 1 página; quadro de áreas como imagem
+        narrativo = gerar_memorial_narrativo(projeto)
+        (pasta / "memorial.pdf").write_bytes(assinar_pdf(narrativo.pdf, autor, proprietario))
+        verdade_ocr["memorial.pdf (imagem do quadro de áreas)"] = narrativo.texto_da_imagem
+    elif definicao.memorial == "texto":  # digitado: assinado como as pranchas (sem alteração)
         (pasta / "memorial.pdf").write_bytes(
             assinar_pdf(gerar_memorial_pdf(memorial), autor, proprietario))
     else:  # impresso, assinado à caneta e escaneado
@@ -155,11 +218,21 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
                                                 projeto.semente * 67)
         (pasta / "memorial.pdf").write_bytes(doc_memorial.pdf)
         verdade_ocr["memorial.pdf"] = doc_memorial.texto_por_pagina
-    lei = gerar_lei(projeto)
-    (pasta / "lei_municipal.pdf").write_bytes(gerar_pdf_normativo(lei.documento))
-    norma = gerar_norma_condominio(projeto)
+    lei = gerar_lei(projeto, definicao.lei)
+    pdf_lei = gerar_pdf_normativo(lei.documento)
+    if definicao.lei_escaneada:  # cópia escaneada (como o código de obras real)
+        doc_lei = escanear_pdf(pdf_lei, definicao.lei_escaneada, projeto.semente * 79)
+        pdf_lei = doc_lei.pdf
+        verdade_ocr["lei_municipal.pdf"] = doc_lei.texto_por_pagina
+    (pasta / "lei_municipal.pdf").write_bytes(pdf_lei)
+    norma = gerar_norma_condominio(projeto, definicao.norma_modelo)
     if definicao.norma == "texto":
         (pasta / "norma_condominio.pdf").write_bytes(gerar_pdf_normativo(norma.documento))
+    elif definicao.norma_modelo == "numerada":  # documento digitado, impresso e copiado
+        doc_norma = escanear_pdf(gerar_pdf_normativo(norma.documento), definicao.norma,
+                                 projeto.semente * 73, rubricar=False)
+        (pasta / "norma_condominio.pdf").write_bytes(doc_norma.pdf)
+        verdade_ocr["norma_condominio.pdf"] = doc_norma.texto_por_pagina
     else:
         doc_norma = gerar_norma_escaneada(norma.documento, definicao.norma,
                                           projeto.semente * 73)
@@ -177,7 +250,8 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
     especificacao["legislacao"] = {
         "lei_modelo": lei.modelo, "zona": lei.zona,
         "valor_revogado": dict([lei.valor_antigo]) if lei.valor_antigo else None,
-        "norma_condominio": definicao.norma,
+        "norma_condominio": definicao.norma, "norma_modelo": definicao.norma_modelo,
+        "lei_escaneada": definicao.lei_escaneada, "limiar_area_lote": lei.limiar_area,
     }
     _gravar_json(pasta / "especificacao.json", especificacao)
     return pasta

@@ -75,6 +75,7 @@ class Parametros:
     altura_max: float | None = None
     pavimentos_max: int | None = None
     muro_altura_max: float | None = None
+    area_construida_min: float | None = None  # em geral só o condomínio define
 
 
 @dataclass
@@ -126,14 +127,23 @@ class Variacao:
     """Estilo visual das pranchas (não muda o conteúdo)."""
 
     estilo_carimbo: int  # 0 a 3
-    estilo_quadro: int  # 0 a 3
+    estilo_quadro: int  # 0 a 3; 4 = estilo AutoCAD ("A=", "C=", "H=", rótulos quebrados)
     formato: str  # "A1", "A2", "A3"
     decimal_ponto: bool  # cotas "5.00" (estilo CAD) em vez de "5,00"
     cotas_rotuladas: bool  # "RECUO FRONTAL 5,00" ou só "5,00"
     caixa_alta: bool
     arquivo_unico: bool  # todas as folhas num PDF só, ou um PDF por folha
     estilo_software: str  # só influencia metadados e detalhes de texto
-    estilo_norte: str = "seta"  # "seta" ou "rosa" (rosa dos ventos)
+    estilo_norte: str = "seta"  # "seta", "rosa" (N/S/L/O) ou "rosa_girada" (N/E/S/O, girada)
+    # Variações vindas da calibração com exemplos reais (docs/06 §4):
+    texto_cad: str = "ttf"  # "ttf"; "misto" = só os rótulos do carimbo em TrueType; "shx" = tudo
+    codigos_cad: bool = False  # comentários com códigos do AutoCAD ("%%%" no lugar de "%")
+    notacao_cad: bool = False  # "MURO H=1.80m" no corte
+    vizinhos_com_area: bool = False  # localização com a área de cada lote
+    folha_empilhada: bool = False  # nº da folha como "01" sobre "05" (carimbos 0 e 3)
+    capa: bool = False  # folha inicial com identificação em texto corrido
+    perspectiva: bool = False  # folha final só com desenho, sem nenhum texto
+    revisao_em_branco: bool = False  # campo de revisão do carimbo vazio
 
 
 @dataclass
@@ -454,7 +464,10 @@ _PARAMETROS = {
     "PAVIMENTOS_MAX": ("pavimentos_max", "maximo",
                        lambda p: len(p.edificacao.areas_pavimentos), None),
     "MURO_ALTURA_MAX": ("muro_altura_max", "maximo", lambda p: p.edificacao.muro_altura, "muro"),
+    "AREA_CONSTR_MIN": ("area_construida_min", "minimo", lambda p: p.area_total, None),
 }
+# Parâmetros que só entram no gabarito quando algum documento define o limite.
+_PARAMETROS_OPCIONAIS = {"AREA_CONSTR_MIN"}
 
 
 def _item(chave, status, escopo=None, **extras) -> dict:
@@ -479,7 +492,10 @@ def gerar_gabarito(projeto: Projeto, conjunto: str, rodada: str = "R00",
     itens.append(_item("ID_MATRICULA", _status_igual(p.matricula_prancha == ident.matricula),
                        documentos=["prancha", "matricula"] if a.matricula else None))
     revisoes = {p.revisao_da_folha(i) for i in range(p.numero_folhas)}
-    itens.append(_item("ID_REVISAO", _status_igual(len(revisoes) == 1)))
+    if p.variacao.revisao_em_branco:  # revisão não informada: não dá para conferir
+        itens.append(_item("ID_REVISAO", "nao_verificavel"))
+    else:
+        itens.append(_item("ID_REVISAO", _status_igual(len(revisoes) == 1)))
     for chave in ("ID_CARTORIO", "ID_LOTE_QUADRA", "ID_CONDOMINIO", "ID_ENDERECO",
                   "ID_AUTOR_REGISTRO", "ID_RRT_ART"):
         itens.append(_item(chave, "atende"))
@@ -514,6 +530,8 @@ def gerar_gabarito(projeto: Projeto, conjunto: str, rodada: str = "R00",
     # Parâmetros
     for chave, (nome, limite_tipo, valor_de, cota) in _PARAMETROS.items():
         limite = p.parametro_adotado(nome)
+        if limite is None and chave in _PARAMETROS_OPCIONAIS:
+            continue
         valor = valor_de(p)
         fontes = {"prefeitura": getattr(p.prefeitura, nome),
                   "condominio": getattr(p.condominio, nome), "adotado": limite}
