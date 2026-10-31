@@ -8,11 +8,13 @@
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 525.0,
+      "memorial": 525.0,
       "matricula": 525.0,
       "escritura": 525.0
     },
     "AREA_CONSTR_TOTAL": {
       "prancha": 293.5,
+      "memorial": 293.5,
       "calculado": 283.5
     },
     "LOTE_AREA_MIN": {

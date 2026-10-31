@@ -7,7 +7,8 @@ O projeto base é sempre CONFORME (atende a todos os parâmetros, com folga). Ca
 altera uma coisa específica e produz exatamente um item "não atende"/"divergente" no gabarito.
 
 Convenções (valem também para a Fase 4):
-- Os documentos do AUTOR (pranchas e memorial) mostram os mesmos valores entre si.
+- Os documentos do AUTOR (pranchas e memorial) mostram os mesmos valores entre si (inclusive
+  os erros e as omissões), exceto no erro "memorial_area_divergente".
 - Matrícula e escritura mostram a verdade registral (ex.: área real do terreno).
 - Índices declarados (TO, CA, TP) são calculados a partir dos valores IMPRESSOS na prancha;
   a conferência "declarado × recalculado" usa os valores da própria prancha.
@@ -33,7 +34,7 @@ ERROS_DISPONIVEIS = (
     "area_terreno_divergente", "soma_areas_errada", "to_declarada_errada", "to_excedida",
     "recuo_frontal_insuficiente", "matricula_divergente", "revisao_divergente", "cota_omitida",
     "sem_norte", "sem_proprietario", "sem_assinatura_autor", "sem_assinatura_proprietario",
-    "assinatura_alterada", "muro_alto", "altura_excedida",
+    "assinatura_alterada", "muro_alto", "altura_excedida", "memorial_area_divergente",
 )
 
 
@@ -108,6 +109,7 @@ class Apresentacao:
 
     area_terreno: float | None = None
     area_total: float | None = None
+    area_total_memorial: float | None = None  # o memorial diverge do quadro de áreas
     to_declarada: float | None = None
     matricula: str | None = None
     revisao_por_folha: dict[int, str] = field(default_factory=dict)
@@ -191,6 +193,11 @@ class Projeto:
     def area_total_prancha(self) -> float:
         a = self.apresentacao.area_total
         return self.area_total if a is None else a
+
+    @property
+    def area_total_memorial(self) -> float:
+        a = self.apresentacao.area_total_memorial
+        return self.area_total_prancha if a is None else a
 
     @property
     def to_prancha(self) -> float:
@@ -420,6 +427,8 @@ def aplicar_erros(projeto: Projeto, erros: list[str]) -> Projeto:
             e.muro_altura = round(adotado("muro_altura_max") + 0.4, 2)
         elif nome == "altura_excedida":
             e.altura = round(adotado("altura_max") + 0.5, 2)
+        elif nome == "memorial_area_divergente":
+            a.area_total_memorial = round(projeto.area_total_prancha - 7.5, 2)
         projeto.erros.append(erro)
     return projeto
 
@@ -480,13 +489,18 @@ def gerar_gabarito(projeto: Projeto, conjunto: str, rodada: str = "R00",
     itens.append(_item("TERRENO_AREA",
                        _status_igual(abs(p.area_terreno_prancha - p.terreno.area) < 0.005),
                        documentos=["prancha", "matricula"] if a.area_terreno else None))
-    valores["TERRENO_AREA"] = {"prancha": p.area_terreno_prancha, "matricula": p.terreno.area}
+    valores["TERRENO_AREA"] = {"prancha": p.area_terreno_prancha,
+                               "memorial": p.area_terreno_prancha, "matricula": p.terreno.area}
     itens.append(_item("TERRENO_TESTADA",
                        "nao_verificavel" if "testada" in omitidas else "atende"))
     for indice in range(1, len(p.edificacao.areas_pavimentos) + 1):
         itens.append(_item("AREA_CONSTR_PAV", "atende", escopo=f"pavimento={indice}"))
-    itens.append(_item("AREA_CONSTR_TOTAL", "atende"))
-    valores["AREA_CONSTR_TOTAL"] = {"prancha": p.area_total_prancha, "calculado": p.area_total}
+    memorial_ok = abs(p.area_total_memorial - p.area_total_prancha) < 0.005
+    itens.append(_item("AREA_CONSTR_TOTAL", _status_igual(memorial_ok),
+                       documentos=None if memorial_ok else ["prancha", "memorial"]))
+    valores["AREA_CONSTR_TOTAL"] = {"prancha": p.area_total_prancha,
+                                    "memorial": p.area_total_memorial,
+                                    "calculado": p.area_total}
 
     # Aritmética da própria prancha
     itens.append(_item("AREA_CONSTR_SOMA",

@@ -15,6 +15,7 @@ As assinaturas digitais usam certificados fictícios gerados na hora. Por isso, 
 | `pranchas.pdf` ou `prancha_01..03.pdf` | 01 situação + localização + quadro de áreas · 02 plantas baixas · 03 corte e fachada |
 | `matricula.pdf` | Matrícula **escaneada** (só imagem): certidão de inteiro teor moderna ou ficha antiga datilografada |
 | `escritura.pdf` | Escritura de compra e venda **escaneada**, em papel de segurança |
+| `memorial.pdf` | Memorial descritivo: digitado (texto selecionável, assinado digitalmente) ou impresso, assinado à caneta e escaneado |
 | `gabarito.json` | O que o software deve apontar (formato em [docs/esquemas](../docs/esquemas/)) |
 | `especificacao.json` | A "verdade" do projeto fictício (terreno, edificação, parâmetros, erros injetados e resumo da matrícula e da escritura) |
 | `verdade_ocr.json` | Texto impresso de cada página escaneada (sem carimbos, selos e assinaturas), para medir o OCR |
@@ -31,17 +32,17 @@ As assinaturas digitais usam certificados fictícios gerados na hora. Por isso, 
 | sint-007 🔒 | 2 | 0 | A2 | área divergente; testada sem cota; sem Norte; sem assinatura do autor |
 | sint-008 🔒 | 3 | 1 | A3 | TO declarada errada; matrícula divergente; muro acima do limite |
 
-### Matrícula e escritura (Fase 4)
-| Conjunto | Matrícula (estilo, qualidade) | Escritura | Particularidade |
-|---|---|---|---|
-| sint-001 | certidão, boa | boa | escritura com a área anterior à retificação |
-| sint-002 | ficha, média | boa | alienação fiduciária ainda ativa (ônus) |
-| sint-003 | certidão, média | média | só um ato (venda) |
-| sint-004 | certidão, boa | ruim | 5 atos |
-| sint-005 | ficha, ruim | boa | — |
-| sint-006 | certidão, boa | média | 6 atos |
-| sint-007 🔒 | certidão, média | boa | escritura com a área anterior à retificação |
-| sint-008 🔒 | ficha, boa | média | escritura com a área anterior à retificação |
+### Matrícula, escritura e memorial (Fase 4)
+| Conjunto | Matrícula (estilo, qualidade) | Escritura | Memorial | Particularidade |
+|---|---|---|---|---|
+| sint-001 | certidão, boa | boa | texto | escritura com a área anterior à retificação |
+| sint-002 | ficha, média | boa | texto | alienação fiduciária ainda ativa (ônus) |
+| sint-003 | certidão, média | média | escaneado, média | só um ato (venda) |
+| sint-004 | certidão, boa | ruim | texto | 5 atos |
+| sint-005 | ficha, ruim | boa | texto | — |
+| sint-006 | certidão, boa | média | escaneado, boa | 6 atos |
+| sint-007 🔒 | certidão, média | boa | texto | escritura com a área anterior à retificação |
+| sint-008 🔒 | ficha, boa | média | escaneado, ruim | escritura com a área anterior à retificação |
 
 Qualidades do escaneamento: **boa** = escaneamento de mesa limpo (300 dpi, colorido, quase sem inclinação), o caso típico dos exemplos reais; **média** e **ruim** = testes de resistência do OCR (inclinação de até 3°, desbotamento, sujeira, baixa resolução).
 
@@ -59,4 +60,5 @@ Qualidades do escaneamento: **boa** = escaneamento de mesa limpo (300 dpi, color
 - A **matrícula** mostra a verdade registral atual (área e proprietário). Ela pode trazer de propósito valores antigos mudados por atos posteriores: área corrigida por retificação, primeiro comprador que já vendeu, ônus registrado e cancelado.
 - A **escritura** é a da venda ao proprietário atual e é coerente com o registro (partes, CPFs, valor, livro e folhas). Ela descreve o imóvel na data da venda: se a retificação veio depois, mostra a área antiga.
 - Matrículas e escrituras imitam o estilo dos exemplos reais (docs/06-calibracao-exemplos-reais.md §5): papel de segurança, brasão fictício, carimbo "CÓPIA", rubricas, selo com QR code. Todo CPF e CNPJ tem dígitos verificadores inválidos.
-- Memoriais, leis, normas de condomínio, o projeto com revisões R00/R01 e as variações de prancha do doc 06 §4 ainda serão acrescentados na Fase 4.
+- O **memorial** é documento do autor: repete os valores das pranchas, inclusive erros e omissões (cota omitida na prancha também não aparece no memorial) e as assinaturas presentes ou ausentes. Traz especificações técnicas com números que não são procurados (fck, pé-direito, caixa d'água, inclinação do telhado, piscina). O erro `memorial_area_divergente` (área total do memorial ≠ quadro) existe, mas ainda não foi usado em nenhum conjunto.
+- Leis, normas de condomínio, o projeto com revisões R00/R01 e as variações de prancha do doc 06 §4 ainda serão acrescentados na Fase 4.

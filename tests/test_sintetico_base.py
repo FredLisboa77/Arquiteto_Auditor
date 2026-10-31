@@ -62,6 +62,9 @@ def test_gerar_conjunto_grava_pdfs_assinados_gabarito_e_especificacao(tmp_path):
         documento = pymupdf.open(pasta / nome)
         assert documento.page_count == len(verdade[nome])
         assert all(not p.get_text().strip() for p in documento)  # só imagem
+    memorial = pymupdf.open(pasta / "memorial.pdf")  # conjunto 1: memorial digitado e assinado
+    assert "MEMORIAL DESCRITIVO" in memorial[0].get_text()
+    assert any(w.field_type_string == "Signature" for p in memorial for w in p.widgets())
     registrais = especificacao["documentos_registrais"]
     assert gabarito.valores_esperados["TERRENO_AREA"]["matricula"] == (
         registrais["matricula"]["area_atual"])
@@ -69,6 +72,12 @@ def test_gerar_conjunto_grava_pdfs_assinados_gabarito_e_especificacao(tmp_path):
         registrais["escritura"]["area_descrita"])
     assert gabarito.valores_esperados["ID_PROPRIETARIO"]["matricula"] == (
         especificacao["identificacao"]["proprietario"])
+
+
+def test_base_tem_memorial_em_texto_e_escaneado():
+    formas = [d.memorial for d in CONJUNTOS]
+    assert "texto" in formas
+    assert {"boa", "media", "ruim"} <= set(formas)
 
 
 def test_base_varia_estilo_e_qualidade_dos_escaneados():

@@ -29,6 +29,11 @@ from dados_sinteticos.geradores.especificacao import (
     gerar_gabarito,
     gerar_projeto_base,
 )
+from dados_sinteticos.geradores.memorial import (
+    gerar_memorial,
+    gerar_memorial_escaneado,
+    gerar_memorial_pdf,
+)
 from dados_sinteticos.geradores.pranchas import gerar_pdfs
 from dados_sinteticos.geradores.registro import Matricula, gerar_matricula_escaneada
 
@@ -45,6 +50,7 @@ class DefinicaoConjunto:
     reservado: bool = False  # reservado para avaliação (não usar ao desenvolver regras)
     matricula: tuple[str, str] = ("certidao", "boa")  # (estilo, qualidade do escaneamento)
     escritura: str = "boa"  # qualidade do escaneamento
+    memorial: str = "texto"  # "texto" (digitado e assinado digitalmente) ou qualidade do escaneado
 
 
 CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
@@ -58,7 +64,7 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
     DefinicaoConjunto(
         "sint-003", 103, ("cota_omitida:recuo_fundos", "cota_omitida:altura_total", "sem_norte"),
         {"estilo_carimbo": 2, "estilo_quadro": 2, "formato": "A3", "cotas_rotuladas": False},
-        matricula=("certidao", "media"), escritura="media"),
+        matricula=("certidao", "media"), escritura="media", memorial="media"),
     DefinicaoConjunto(
         "sint-004", 104, ("sem_assinatura_proprietario", "sem_proprietario", "muro_alto"),
         {"estilo_carimbo": 3, "estilo_quadro": 3, "formato": "A1", "arquivo_unico": False},
@@ -70,7 +76,7 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
     DefinicaoConjunto(
         "sint-006", 106, ("to_excedida", "recuo_frontal_insuficiente", "altura_excedida"),
         {"estilo_carimbo": 1, "estilo_quadro": 3, "formato": "A3"},
-        escritura="media"),
+        escritura="media", memorial="boa"),
     DefinicaoConjunto(
         "sint-007", 107,
         ("area_terreno_divergente", "cota_omitida:testada", "sem_norte", "sem_assinatura_autor"),
@@ -79,7 +85,7 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
     DefinicaoConjunto(
         "sint-008", 108, ("to_declarada_errada", "matricula_divergente", "muro_alto"),
         {"estilo_carimbo": 3, "estilo_quadro": 1, "formato": "A3", "decimal_ponto": True},
-        reservado=True, matricula=("ficha", "boa"), escritura="media"),
+        reservado=True, matricula=("ficha", "boa"), escritura="media", memorial="ruim"),
 )
 
 
@@ -110,12 +116,23 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
                                                          matricula)
     (pasta / "matricula.pdf").write_bytes(doc_matricula.pdf)
     (pasta / "escritura.pdf").write_bytes(doc_escritura.pdf)
-    _gravar_json(pasta / "verdade_ocr.json", {
+    verdade_ocr = {
         "descricao": "Texto impresso de cada página escaneada (sem carimbos, selos e "
                      "assinaturas), para medir o OCR. Página em branco = \"\".",
         "matricula.pdf": doc_matricula.texto_por_pagina,
         "escritura.pdf": doc_escritura.texto_por_pagina,
-    })
+    }
+
+    memorial = gerar_memorial(projeto)
+    if definicao.memorial == "texto":  # digitado: assinado como as pranchas (sem alteração)
+        (pasta / "memorial.pdf").write_bytes(
+            assinar_pdf(gerar_memorial_pdf(memorial), autor, proprietario))
+    else:  # impresso, assinado à caneta e escaneado
+        doc_memorial = gerar_memorial_escaneado(memorial, definicao.memorial,
+                                                projeto.semente * 67)
+        (pasta / "memorial.pdf").write_bytes(doc_memorial.pdf)
+        verdade_ocr["memorial.pdf"] = doc_memorial.texto_por_pagina
+    _gravar_json(pasta / "verdade_ocr.json", verdade_ocr)
 
     gabarito = _completar_gabarito(gerar_gabarito(projeto, definicao.conjunto), matricula,
                                    escritura)

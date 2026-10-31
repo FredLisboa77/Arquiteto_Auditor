@@ -74,6 +74,7 @@
   "apresentacao": {
     "area_terreno": 357.7,
     "area_total": null,
+    "area_total_memorial": null,
     "to_declarada": null,
     "matricula": "81.753",
     "revisao_por_folha": {},

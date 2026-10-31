@@ -135,6 +135,7 @@ class Linha:
     escala: float = 1.0  # títulos maiores (a linha ocupa `escala` entrelinhas)
     prefixo_negrito: int = 0  # os N primeiros caracteres em negrito (rótulo "R-1/...")
     brasao: bool = False  # em vez de texto, um brasão redondo centralizado
+    assinar: bool = False  # assinatura à caneta sobre esta linha ("____")
 
     @property
     def texto_limpo(self) -> str:
@@ -474,6 +475,9 @@ def renderizar(pagina: Pagina, qualidade: Qualidade, rng: random.Random,
         for x, palavra, negrito in posicoes_das_palavras(linha, estilo):
             des.palavra(x0 + des.px(x), y, palavra, negrito, linha.escala)
             ultimo_x = x0 + des.px(x + estilo.medir(palavra, negrito, linha.escala))
+        if linha.assinar:
+            centro = x0 + des.px(estilo.largura_texto_pt) / 2
+            des.rubrica(centro - des.px(55), y - altura * 0.2, des.px(110))
         if pagina.rubricas_apos and linha.texto_limpo.endswith(pagina.rubricas_apos):
             des.rubrica(ultimo_x + des.px(8), y + altura * 0.4, des.px(45))
         y += altura
