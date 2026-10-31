@@ -1,5 +1,7 @@
 # Arquiteto Auditor
 
+*Sistema que compara documentos gerados pelo arquiteto com os documentos obrigatórios do município e do condomínio de localização do imóvel.*
+
 Ferramenta **local** e de **código aberto** de apoio à conferência documental de projetos arquitetônicos residenciais (casas de até dois pavimentos em condomínio horizontal, Brasil).
 
 Lê os PDFs do projeto (pranchas, memorial descritivo, certidão de inteiro teor da matrícula, escritura, legislação municipal e normas do condomínio), verifica a consistência entre os documentos e o atendimento aos parâmetros urbanísticos, e gera um relatório versionado (R00, R01…) com evidências e sugestões de correção para o autor do projeto.
