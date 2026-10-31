@@ -101,5 +101,26 @@
     "to": 30.0,
     "ca": 0.54,
     "tp": 25.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "ficha",
+      "qualidade": "ruim",
+      "area_atual": 525.0,
+      "proprietario_atual": "Sabrina Vargas Oliveira",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (31/10/2017)",
+        "R-2 COMPRA E VENDA (27/01/2019)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-2",
+      "data": "05/12/2017",
+      "valor": 720000,
+      "area_descrita": 525.0,
+      "area_diferente_da_atual": false
+    }
   }
 }

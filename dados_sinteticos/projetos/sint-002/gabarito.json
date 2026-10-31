@@ -8,7 +8,8 @@
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 357.7,
-      "matricula": 360.0
+      "matricula": 360.0,
+      "escritura": 360.0
     },
     "AREA_CONSTR_TOTAL": {
       "prancha": 226.8,
@@ -75,6 +76,10 @@
       "condominio": 2.2,
       "adotado": 2.2,
       "calculado": 2.0
+    },
+    "ID_PROPRIETARIO": {
+      "matricula": "Luiz Otávio Gomes da Rocha",
+      "escritura": "Luiz Otávio Gomes da Rocha"
     }
   },
   "itens_esperados": [

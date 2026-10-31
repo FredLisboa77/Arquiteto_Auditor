@@ -102,5 +102,28 @@
     "to": 35.0,
     "ca": 0.63,
     "tp": 20.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "media",
+      "area_atual": 400.0,
+      "proprietario_atual": "Ana Luiza Carvalho Lima",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (24/10/2016)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (14/01/2018)",
+        "R-3 ALIENAÇÃO FIDUCIÁRIA (12/06/2019)",
+        "AV-4 CANCELAMENTO (03/06/2020)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-1",
+      "data": "07/10/2015",
+      "valor": 680000,
+      "area_descrita": 403.75,
+      "area_diferente_da_atual": true
+    }
   }
 }

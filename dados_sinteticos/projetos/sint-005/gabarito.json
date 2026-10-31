@@ -8,7 +8,8 @@
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 525.0,
-      "matricula": 525.0
+      "matricula": 525.0,
+      "escritura": 525.0
     },
     "AREA_CONSTR_TOTAL": {
       "prancha": 293.5,
@@ -73,6 +74,10 @@
       "condominio": 2.2,
       "adotado": 2.2,
       "calculado": 2.2
+    },
+    "ID_PROPRIETARIO": {
+      "matricula": "Sabrina Vargas Oliveira",
+      "escritura": "Sabrina Vargas Oliveira"
     }
   },
   "itens_esperados": [

@@ -95,5 +95,26 @@
     "to": 29.99,
     "ca": 0.54,
     "tp": 28.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 400.0,
+      "proprietario_atual": "Milena Cunha Pereira",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (03/06/2016)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (08/02/2018)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-1",
+      "data": "02/05/2015",
+      "valor": 610000,
+      "area_descrita": 395.0,
+      "area_diferente_da_atual": true
+    }
   }
 }

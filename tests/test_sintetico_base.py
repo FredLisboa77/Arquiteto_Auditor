@@ -49,9 +49,31 @@ def test_gerar_conjunto_grava_pdfs_assinados_gabarito_e_especificacao(tmp_path):
     assert gabarito.conjunto == definicao.conjunto
     especificacao = json.loads((pasta / "especificacao.json").read_text(encoding="utf-8"))
     assert especificacao["semente"] == definicao.semente
-    pdfs = sorted(pasta.glob("*.pdf"))
-    assert pdfs
-    for pdf in pdfs:
+    pranchas = sorted(pasta.glob("prancha*.pdf"))
+    assert pranchas
+    for pdf in pranchas:
         documento = pymupdf.open(pdf)
         assert documento.is_pdf
         assert any(w.field_type_string == "Signature" for p in documento for w in p.widgets())
+
+    # documentos registrais escaneados + verdade do OCR
+    verdade = json.loads((pasta / "verdade_ocr.json").read_text(encoding="utf-8"))
+    for nome in ("matricula.pdf", "escritura.pdf"):
+        documento = pymupdf.open(pasta / nome)
+        assert documento.page_count == len(verdade[nome])
+        assert all(not p.get_text().strip() for p in documento)  # só imagem
+    registrais = especificacao["documentos_registrais"]
+    assert gabarito.valores_esperados["TERRENO_AREA"]["matricula"] == (
+        registrais["matricula"]["area_atual"])
+    assert gabarito.valores_esperados["TERRENO_AREA"]["escritura"] == (
+        registrais["escritura"]["area_descrita"])
+    assert gabarito.valores_esperados["ID_PROPRIETARIO"]["matricula"] == (
+        especificacao["identificacao"]["proprietario"])
+
+
+def test_base_varia_estilo_e_qualidade_dos_escaneados():
+    assert {d.matricula[0] for d in CONJUNTOS} == {"ficha", "certidao"}
+    qualidades = {d.matricula[1] for d in CONJUNTOS} | {d.escritura for d in CONJUNTOS}
+    assert qualidades == {"boa", "media", "ruim"}
+    # o caso típico (escaneamento de mesa limpo) é a maioria
+    assert sum(d.escritura == "boa" for d in CONJUNTOS) >= len(CONJUNTOS) // 2

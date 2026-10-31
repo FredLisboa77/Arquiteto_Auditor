@@ -8,7 +8,8 @@
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 437.5,
-      "matricula": 437.5
+      "matricula": 437.5,
+      "escritura": 437.5
     },
     "AREA_CONSTR_TOTAL": {
       "prancha": 315.02,
@@ -73,6 +74,10 @@
       "condominio": 1.8,
       "adotado": 1.8,
       "calculado": 1.8
+    },
+    "ID_PROPRIETARIO": {
+      "matricula": "Joaquim Rezende Garcia",
+      "escritura": "Joaquim Rezende Garcia"
     }
   },
   "itens_esperados": [

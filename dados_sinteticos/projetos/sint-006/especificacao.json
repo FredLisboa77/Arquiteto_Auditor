@@ -99,5 +99,30 @@
     "to": 42.03,
     "ca": 0.76,
     "tp": 20.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 450.0,
+      "proprietario_atual": "Valentim Azevedo Correia",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (21/03/2010)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (08/09/2010)",
+        "R-3 ALIENAÇÃO FIDUCIÁRIA (21/12/2011)",
+        "AV-4 CANCELAMENTO (27/08/2012)",
+        "AV-5 ALTERAÇÃO DE DENOMINAÇÃO (17/03/2013)",
+        "R-6 COMPRA E VENDA (20/04/2014)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "media",
+      "registrada_em": "R-6",
+      "data": "13/04/2013",
+      "valor": 840000,
+      "area_descrita": 450.0,
+      "area_diferente_da_atual": false
+    }
   }
 }

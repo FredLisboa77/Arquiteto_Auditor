@@ -8,7 +8,8 @@
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 400.0,
-      "matricula": 400.0
+      "matricula": 400.0,
+      "escritura": 395.0
     },
     "AREA_CONSTR_TOTAL": {
       "prancha": 215.95,
@@ -74,6 +75,10 @@
       "condominio": 2.0,
       "adotado": 2.0,
       "calculado": 1.8
+    },
+    "ID_PROPRIETARIO": {
+      "matricula": "Milena Cunha Pereira",
+      "escritura": "Milena Cunha Pereira"
     }
   },
   "itens_esperados": [

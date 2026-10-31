@@ -8,7 +8,8 @@
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 437.5,
-      "matricula": 437.5
+      "matricula": 437.5,
+      "escritura": 437.5
     },
     "AREA_CONSTR_TOTAL": {
       "prancha": 259.85,
@@ -75,6 +76,10 @@
       "condominio": 2.2,
       "adotado": 2.2,
       "calculado": 2.6
+    },
+    "ID_PROPRIETARIO": {
+      "matricula": "Anthony Gabriel Silva Cardoso",
+      "escritura": "Anthony Gabriel Silva Cardoso"
     }
   },
   "itens_esperados": [

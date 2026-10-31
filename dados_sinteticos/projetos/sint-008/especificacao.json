@@ -99,5 +99,27 @@
     "to": 24.99,
     "ca": 0.45,
     "tp": 30.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "ficha",
+      "qualidade": "boa",
+      "area_atual": 437.5,
+      "proprietario_atual": "Gabriela Costa Barros",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (06/03/2018)",
+        "AV-2 RETIFICAÇÃO DE ÁREA (09/05/2018)",
+        "AV-3 ALTERAÇÃO DE DENOMINAÇÃO (30/11/2019)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "media",
+      "registrada_em": "R-1",
+      "data": "17/01/2017",
+      "valor": 470000,
+      "area_descrita": 443.75,
+      "area_diferente_da_atual": true
+    }
   }
 }

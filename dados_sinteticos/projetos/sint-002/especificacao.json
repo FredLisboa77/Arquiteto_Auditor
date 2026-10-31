@@ -98,5 +98,29 @@
     "to": 35.0,
     "ca": 0.63,
     "tp": 25.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "ficha",
+      "qualidade": "media",
+      "area_atual": 360.0,
+      "proprietario_atual": "Luiz Otávio Gomes da Rocha",
+      "onus_ativos": [
+        "R-2/81.735"
+      ],
+      "atos": [
+        "R-1 COMPRA E VENDA (30/10/2015)",
+        "R-2 ALIENAÇÃO FIDUCIÁRIA (03/02/2016)",
+        "R-3 COMPRA E VENDA (03/04/2016)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "boa",
+      "registrada_em": "R-3",
+      "data": "25/02/2016",
+      "valor": 750000,
+      "area_descrita": 360.0,
+      "area_diferente_da_atual": false
+    }
   }
 }

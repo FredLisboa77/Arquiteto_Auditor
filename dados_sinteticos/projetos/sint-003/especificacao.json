@@ -102,5 +102,25 @@
     "to": 40.0,
     "ca": 0.72,
     "tp": 23.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "media",
+      "area_atual": 437.5,
+      "proprietario_atual": "Joaquim Rezende Garcia",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (29/07/2014)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "media",
+      "registrada_em": "R-1",
+      "data": "05/04/2013",
+      "valor": 200000,
+      "area_descrita": 437.5,
+      "area_diferente_da_atual": false
+    }
   }
 }

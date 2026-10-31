@@ -60,3 +60,34 @@
 - **Fase 5 (ingestão):** uma lista única de palavras por página, juntando texto selecionável, comentários e OCR, com origem e posição.
 - **Fase 6 (pranchas):** recuos por geometria, com confirmação do revisor. Quadro de áreas com rótulos em várias linhas. Carimbo com rótulos em texto e valores em comentários.
 - **Normalizador de números:** traduzir os códigos de controle do AutoCAD (`%%%`, `%%c`, `%%d`, `%%p`).
+
+---
+
+## 5. Documentos registrais escaneados (escritura e certidão de inteiro teor)
+
+> Registro de 31/10/2026. Fontes: uma escritura (4 páginas) e uma certidão de inteiro teor da matrícula (4 páginas), examinadas só por **estatísticas da imagem** e por uma **versão mascarada** (`scripts/mascarar_escaneado.py`: cada palavra vira uma barra), conferida pelo usuário antes de ser vista. Nenhum dado foi lido.
+
+### 5.1 Digitalização
+| Achado | Consequência |
+|---|---|
+| Todas as páginas são **imagem** (sem texto selecionável), JPEG colorido a **300 dpi**, de 1,6 a 2,4 MB por página. | A ingestão (Fase 5) precisa do OCR para esses documentos. Arquivos reais têm de 7 a 9 MB. |
+| Folha **Carta** (216 × 279 mm), não A4. | Os sintéticos alternam Carta e A4. |
+| Inclinação quase nula (0 a 0,5°) e ruído baixo: **escaneamento de mesa limpo**. | O caso típico é a qualidade "boa". "Média" e "ruim" ficam como testes de resistência do OCR. |
+
+### 5.2 Papel de segurança
+| Achado | Consequência |
+|---|---|
+| Escritura: **brasão grande amarelo-claro** como marca-d'água no centro de todas as páginas, sob o texto, e **fibras coloridas** espalhadas. Papel branco em umas páginas, amarelado em outras. | O OCR precisa tolerar fundo colorido sob o texto. A binarização não pode apagar o texto que passa por cima da marca-d'água. |
+| Certidão: papel branco-azulado com **faixas de segurança nas bordas** (uma escura à esquerda, com emblema; uma de padrão verde à direita), só na frente da folha. | Ignorar as faixas das bordas (não são texto). |
+| Certidão: **carimbo "CÓPIA" repetido** várias vezes, de tamanhos diferentes, por cima e ao lado do texto. Ele avisa que a certidão é cópia da original. | A palavra "CÓPIA" aparece no OCR misturada ao texto e deve ser descartada. |
+| Versos quase vazios, com o texto da frente **transparecendo** fraco. | Página quase vazia não é erro: classificar como "verso". |
+
+### 5.3 Diagramação
+| Achado | Consequência |
+|---|---|
+| **Impressão a laser** (não datilografada), texto justificado e denso, de margem a margem. Escritura: ~30 linhas por página, entrelinha de 5,0 mm. Certidão: entrelinha de 4,3 mm. | O estilo "laser" é o padrão; a máquina de escrever fica para matrículas antigas. |
+| Cabeçalho centralizado: título em letras grandes, brasão redondo, linhas do cartório/tabelionato. Na escritura, a 1ª página traz uma faixa no topo e **duas caixas com moldura** (tipo do ato, livro e folha). | Os dados do ato (livro, folha, data) ficam no cabeçalho: boa âncora para a extração (Fase 7). |
+| Certidão: **rótulos em negrito e maiores** no início dos trechos (abertura e atos). | Âncora para separar os atos (R-1, AV-2…). |
+| **Rubrica na margem direita** de cada página da escritura. | Distração para o OCR (rabisco na margem). |
+| **Espaço em branco anulado com riscos diagonais** depois do fim do texto. | Distração: não interpretar os riscos como desenho ou texto. |
+| Fecho: data e local centralizados, assinaturas azuis, carimbos (retangular e redondo, girados) e **selo com QR code** e texto ao lado. | O selo é uma área à parte; o QR code não é lido. |

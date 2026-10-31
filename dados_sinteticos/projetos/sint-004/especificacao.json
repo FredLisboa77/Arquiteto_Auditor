@@ -99,5 +99,29 @@
     "to": 33.0,
     "ca": 0.59,
     "tp": 30.0
+  },
+  "documentos_registrais": {
+    "matricula": {
+      "estilo": "certidao",
+      "qualidade": "boa",
+      "area_atual": 437.5,
+      "proprietario_atual": "Anthony Gabriel Silva Cardoso",
+      "onus_ativos": [],
+      "atos": [
+        "R-1 COMPRA E VENDA (04/06/2015)",
+        "R-2 ALIENAÇÃO FIDUCIÁRIA (16/01/2016)",
+        "AV-3 CANCELAMENTO (23/02/2017)",
+        "AV-4 ALTERAÇÃO DE DENOMINAÇÃO (16/01/2019)",
+        "R-5 COMPRA E VENDA (05/07/2020)"
+      ]
+    },
+    "escritura": {
+      "qualidade": "ruim",
+      "registrada_em": "R-5",
+      "data": "19/02/2019",
+      "valor": 450000,
+      "area_descrita": 437.5,
+      "area_diferente_da_atual": false
+    }
   }
 }
