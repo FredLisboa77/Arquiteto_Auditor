@@ -126,5 +126,11 @@
       "area_descrita": 403.75,
       "area_diferente_da_atual": true
     }
+  },
+  "legislacao": {
+    "lei_modelo": "A",
+    "zona": "ZR-2",
+    "valor_revogado": null,
+    "norma_condominio": "ruim"
   }
 }

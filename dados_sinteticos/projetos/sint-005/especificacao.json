@@ -123,5 +123,11 @@
       "area_descrita": 525.0,
       "area_diferente_da_atual": false
     }
+  },
+  "legislacao": {
+    "lei_modelo": "A",
+    "zona": "ZR-1",
+    "valor_revogado": null,
+    "norma_condominio": "boa"
   }
 }

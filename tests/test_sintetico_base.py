@@ -65,6 +65,9 @@ def test_gerar_conjunto_grava_pdfs_assinados_gabarito_e_especificacao(tmp_path):
     memorial = pymupdf.open(pasta / "memorial.pdf")  # conjunto 1: memorial digitado e assinado
     assert "MEMORIAL DESCRITIVO" in memorial[0].get_text()
     assert any(w.field_type_string == "Signature" for p in memorial for w in p.widgets())
+    assert gabarito.zona == especificacao["legislacao"]["zona"]
+    for nome in ("lei_municipal.pdf", "norma_condominio.pdf"):
+        assert "DOCUMENTO FICTÍCIO" in " ".join(p.get_text() for p in pymupdf.open(pasta / nome))
     registrais = especificacao["documentos_registrais"]
     assert gabarito.valores_esperados["TERRENO_AREA"]["matricula"] == (
         registrais["matricula"]["area_atual"])

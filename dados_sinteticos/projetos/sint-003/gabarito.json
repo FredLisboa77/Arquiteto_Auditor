@@ -5,6 +5,7 @@
   "rodada": "R00",
   "reservado_avaliacao": false,
   "descricao": "Erros injetados: cota_omitida:recuo_fundos, cota_omitida:altura_total, sem_norte",
+  "zona": "ZR-3",
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 437.5,

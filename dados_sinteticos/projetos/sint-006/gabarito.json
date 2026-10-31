@@ -5,6 +5,7 @@
   "rodada": "R00",
   "reservado_avaliacao": false,
   "descricao": "Erros injetados: to_excedida, recuo_frontal_insuficiente, altura_excedida",
+  "zona": "ZR-1",
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 450.0,

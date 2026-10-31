@@ -29,6 +29,13 @@ from dados_sinteticos.geradores.especificacao import (
     gerar_gabarito,
     gerar_projeto_base,
 )
+from dados_sinteticos.geradores.legislacao import (
+    LeiMunicipal,
+    gerar_lei,
+    gerar_norma_condominio,
+    gerar_norma_escaneada,
+    gerar_pdf_normativo,
+)
 from dados_sinteticos.geradores.memorial import (
     gerar_memorial,
     gerar_memorial_escaneado,
@@ -51,6 +58,7 @@ class DefinicaoConjunto:
     matricula: tuple[str, str] = ("certidao", "boa")  # (estilo, qualidade do escaneamento)
     escritura: str = "boa"  # qualidade do escaneamento
     memorial: str = "texto"  # "texto" (digitado e assinado digitalmente) ou qualidade do escaneado
+    norma: str = "texto"  # norma do condomínio: "texto" ou qualidade do escaneado
 
 
 CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
@@ -60,7 +68,7 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
     DefinicaoConjunto(
         "sint-002", 102, ("area_terreno_divergente", "matricula_divergente"),
         {"estilo_carimbo": 1, "estilo_quadro": 1, "formato": "A2", "decimal_ponto": True},
-        matricula=("ficha", "media")),
+        matricula=("ficha", "media"), norma="media"),
     DefinicaoConjunto(
         "sint-003", 103, ("cota_omitida:recuo_fundos", "cota_omitida:altura_total", "sem_norte"),
         {"estilo_carimbo": 2, "estilo_quadro": 2, "formato": "A3", "cotas_rotuladas": False},
@@ -72,7 +80,7 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
     DefinicaoConjunto(
         "sint-005", 105, ("assinatura_alterada", "soma_areas_errada", "revisao_divergente"),
         {"estilo_carimbo": 0, "estilo_quadro": 2, "formato": "A2", "caixa_alta": False},
-        matricula=("ficha", "ruim")),
+        matricula=("ficha", "ruim"), norma="boa"),
     DefinicaoConjunto(
         "sint-006", 106, ("to_excedida", "recuo_frontal_insuficiente", "altura_excedida"),
         {"estilo_carimbo": 1, "estilo_quadro": 3, "formato": "A3"},
@@ -81,7 +89,7 @@ CONJUNTOS: tuple[DefinicaoConjunto, ...] = (
         "sint-007", 107,
         ("area_terreno_divergente", "cota_omitida:testada", "sem_norte", "sem_assinatura_autor"),
         {"estilo_carimbo": 2, "estilo_quadro": 0, "formato": "A2"}, reservado=True,
-        matricula=("certidao", "media")),
+        matricula=("certidao", "media"), norma="ruim"),
     DefinicaoConjunto(
         "sint-008", 108, ("to_declarada_errada", "matricula_divergente", "muro_alto"),
         {"estilo_carimbo": 3, "estilo_quadro": 1, "formato": "A3", "decimal_ponto": True},
@@ -132,15 +140,30 @@ def gerar_conjunto(definicao: DefinicaoConjunto, destino: Path = PASTA_PROJETOS)
                                                 projeto.semente * 67)
         (pasta / "memorial.pdf").write_bytes(doc_memorial.pdf)
         verdade_ocr["memorial.pdf"] = doc_memorial.texto_por_pagina
+    lei = gerar_lei(projeto)
+    (pasta / "lei_municipal.pdf").write_bytes(gerar_pdf_normativo(lei.documento))
+    norma = gerar_norma_condominio(projeto)
+    if definicao.norma == "texto":
+        (pasta / "norma_condominio.pdf").write_bytes(gerar_pdf_normativo(norma.documento))
+    else:
+        doc_norma = gerar_norma_escaneada(norma.documento, definicao.norma,
+                                          projeto.semente * 73)
+        (pasta / "norma_condominio.pdf").write_bytes(doc_norma.pdf)
+        verdade_ocr["norma_condominio.pdf"] = doc_norma.texto_por_pagina
     _gravar_json(pasta / "verdade_ocr.json", verdade_ocr)
 
     gabarito = _completar_gabarito(gerar_gabarito(projeto, definicao.conjunto), matricula,
-                                   escritura)
+                                   escritura, lei)
     gabarito.reservado_avaliacao = definicao.reservado
     _gravar_json(pasta / "gabarito.json", {"$schema": ESQUEMA_RELATIVO} | gabarito.model_dump(
         mode="json", exclude_none=True, exclude={"esquema"}))
     especificacao = como_dicionario(projeto)
     especificacao["documentos_registrais"] = _resumo_registral(definicao, matricula, escritura)
+    especificacao["legislacao"] = {
+        "lei_modelo": lei.modelo, "zona": lei.zona,
+        "valor_revogado": dict([lei.valor_antigo]) if lei.valor_antigo else None,
+        "norma_condominio": definicao.norma,
+    }
     _gravar_json(pasta / "especificacao.json", especificacao)
     return pasta
 
@@ -149,10 +172,11 @@ def _gravar_json(caminho: Path, dados: dict) -> None:
     caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def _completar_gabarito(gabarito: Gabarito, matricula: Matricula,
-                        escritura: Escritura) -> Gabarito:
-    """Acrescenta o que a matrícula e a escritura mostram (a matrícula é a verdade atual)."""
+def _completar_gabarito(gabarito: Gabarito, matricula: Matricula, escritura: Escritura,
+                        lei: LeiMunicipal) -> Gabarito:
+    """Acrescenta o que matrícula, escritura e lei mostram (a matrícula é a verdade atual)."""
     dados = gabarito.model_dump(by_alias=True)
+    dados["zona"] = lei.zona
     valores = dados["valores_esperados"]
     valores["TERRENO_AREA"]["escritura"] = escritura.venda.area
     valores["ID_PROPRIETARIO"] = {"matricula": matricula.proprietario_atual,

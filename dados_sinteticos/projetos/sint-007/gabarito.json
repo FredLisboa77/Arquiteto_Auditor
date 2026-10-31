@@ -5,6 +5,7 @@
   "rodada": "R00",
   "reservado_avaliacao": true,
   "descricao": "Erros injetados: area_terreno_divergente, cota_omitida:testada, sem_norte, sem_assinatura_autor",
+  "zona": "ZR-2",
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 397.7,

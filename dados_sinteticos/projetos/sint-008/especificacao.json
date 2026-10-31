@@ -122,5 +122,13 @@
       "area_descrita": 443.75,
       "area_diferente_da_atual": true
     }
+  },
+  "legislacao": {
+    "lei_modelo": "B",
+    "zona": "ZR-1",
+    "valor_revogado": {
+      "recuo_frontal_min": 5.0
+    },
+    "norma_condominio": "texto"
   }
 }

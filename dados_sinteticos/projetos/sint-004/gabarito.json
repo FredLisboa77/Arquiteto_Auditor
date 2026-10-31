@@ -5,6 +5,7 @@
   "rodada": "R00",
   "reservado_avaliacao": false,
   "descricao": "Erros injetados: sem_assinatura_proprietario, sem_proprietario, muro_alto",
+  "zona": "ZR-3",
   "valores_esperados": {
     "TERRENO_AREA": {
       "prancha": 437.5,
