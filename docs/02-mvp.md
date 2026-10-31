@@ -42,7 +42,7 @@ O MVP está pronto quando você consegue, **no seu notebook, sem internet e sem 
 ### 2.4 Verificação (código determinístico)
 - **Consistência documental:** mesmo dado em documentos diferentes → compara com tolerância configurável (ex.: áreas ±0,01 m²; arredondamento) → "divergente entre documentos".
 - **Atendimento a parâmetros:** projeto × parâmetro → "atende" / "não atende", com **margem** (ex.: "TO 62,0% · máx. 60,0% · excede 2,0 p.p. — em terreno de 400 m², reduzir ≈ 8,0 m² de projeção").
-- **Prefeitura × condomínio:** usa o mais restritivo e sinaliza.
+- **Hierarquia prefeitura × condomínio:** a documentação da prefeitura **prevalece** sobre a do condomínio. Parâmetro definido só por um dos dois → usa esse. Definido pelos dois com valores diferentes → adota o da prefeitura e sinaliza a divergência.
 - **Fórmulas:** usa a da lei quando encontrada; senão a padrão, declarada no relatório.
 - Sem dado suficiente → "não foi possível verificar", com o motivo.
 
@@ -97,21 +97,26 @@ Cada item tem uma **chave estável** — é o que permite comparar R00 com R01.
 | `ID_CARTORIO` | Cartório coincidente | Consistência |
 | `ID_LOTE_QUADRA` | Lote e quadra coincidentes | Consistência |
 | `ID_CONDOMINIO` / `ID_ENDERECO` | Nome do condomínio / endereço coincidentes | Consistência |
-| `ID_AUTOR_REGISTRO` | Autor e CAU/CREA presentes e iguais entre pranchas/memorial; RRT/ART presente | Consistência / presença |
+| `ID_AUTOR_REGISTRO` | Autor e CAU/CREA presentes e iguais entre pranchas/memorial | Consistência / presença |
+| `ID_RRT_ART` | RRT/ART indicado e coincidente | Consistência / presença |
 | `ID_REVISAO` | Mesma revisão em todas as pranchas do conjunto | Consistência |
 | `TERRENO_AREA` | Área do terreno: prancha × memorial × matrícula (estado atual) × escritura | Consistência |
 | `TERRENO_TESTADA` | Testada: prancha × matrícula × escritura | Consistência |
-| `AREA_CONSTR_PAV_n` / `AREA_CONSTR_TOTAL` | Áreas por pavimento e total: quadro × memorial; soma dos pavimentos = total | Consistência / aritmética |
+| `AREA_CONSTR_PAV` (escopo: pavimento) / `AREA_CONSTR_TOTAL` | Áreas por pavimento e total: quadro × memorial | Consistência |
+| `AREA_CONSTR_SOMA` | Soma dos pavimentos = total declarado | Aritmética |
 | `LOTE_AREA_MIN` | Área do lote ≥ mínima | Parâmetro |
 | `LOTE_TESTADA_MIN` | Testada ≥ mínima | Parâmetro |
 | `RECUO_FRONTAL` / `RECUO_LATERAL_E` / `RECUO_LATERAL_D` / `RECUO_FUNDOS` | Recuo ≥ mínimo | Parâmetro |
-| `TO_MAX` | Taxa de ocupação ≤ máxima (e TO declarada = TO recalculada) | Parâmetro / aritmética |
-| `CA_MAX` | Coeficiente de aproveitamento ≤ máximo (e declarado = recalculado) | Parâmetro / aritmética |
-| `PERMEAVEL_MIN` | Área/taxa permeável ≥ mínima (e declarada = recalculada) | Parâmetro / aritmética |
+| `TO_MAX` / `TO_DECLARADA` | Taxa de ocupação ≤ máxima / TO declarada = TO recalculada | Parâmetro / aritmética |
+| `CA_MAX` / `CA_DECLARADO` | Coeficiente de aproveitamento ≤ máximo / declarado = recalculado | Parâmetro / aritmética |
+| `PERMEAVEL_MIN` / `PERMEAVEL_DECLARADA` | Área/taxa permeável ≥ mínima / declarada = recalculada | Parâmetro / aritmética |
 | `ALTURA_MAX` | Altura ≤ máxima | Parâmetro |
 | `PAVIMENTOS_MAX` | Nº de pavimentos ≤ máximo | Parâmetro |
 | `MURO_ALTURA_MAX` | Altura de muro/fechamento (divisa e frente) ≤ máxima; altura indicada em corte/fachada/memorial coerente | Parâmetro / consistência |
-| `PARAM_CONFLITO_*` | Prefeitura e condomínio divergem → adotado o mais restritivo (informativo) | Sinalização |
+
+**Conflito prefeitura × condomínio** (decidido na Fase 2): não é um item separado. Ele vira uma **observação** no próprio item do parâmetro (ex.: `TO_MAX`: "prefeitura 60%, condomínio 50%; adotado 60%, pois a documentação da prefeitura prevalece"). Assim todo item fica numa das quatro classificações do relatório.
+
+A lista oficial e completa das chaves está em [`src/arquiteto_auditor/dominio/catalogo.toml`](../src/arquiteto_auditor/dominio/catalogo.toml).
 
 ### 4.1 Verificações de completude e apresentação
 

@@ -20,33 +20,30 @@
 
 ---
 
-## 2. Formato do gabarito (proposta — finalizado na Fase 2)
+## 2. Formato do gabarito (definido na Fase 2)
 
-```json
-{
-  "conjunto": "sint-007",
-  "versao_gabarito": 1,
-  "rodada": "R00",
-  "zona": "ZR-2",
-  "valores_esperados": {
-    "TERRENO_AREA":   {"prancha": 450.00, "memorial": 450.00, "matricula_atual": 452.30},
-    "ID_MATRICULA":   {"prancha": "12.345", "matricula": "12.354"},
-    "TO_MAX":         {"prefeitura": 60.0, "condominio": 50.0, "adotado": 50.0}
-  },
-  "itens_esperados": [
-    {"chave": "TERRENO_AREA",  "status": "divergente",     "documentos": ["prancha", "matricula"]},
-    {"chave": "ID_MATRICULA",  "status": "divergente",     "documentos": ["prancha", "matricula"]},
-    {"chave": "TO_MAX",        "status": "nao_atende",     "valor_projeto": 52.1, "limite": 50.0},
-    {"chave": "RECUO_FRONTAL", "status": "atende"},
-    {"chave": "PARAM_CONFLITO_TO", "status": "sinalizacao"}
-  ],
-  "comparacao_rodada_anterior": [
-    {"chave": "ID_MATRICULA", "resultado": "resolvido"},
-    {"chave": "TO_MAX",       "resultado": "pendente"},
-    {"chave": "RECUO_FUNDOS", "resultado": "novo"}
-  ]
-}
-```
+- **Exemplo comentado:** [`docs/esquemas/exemplo_gabarito.json`](esquemas/exemplo_gabarito.json)
+- **Esquema** (regras do formato; o VS Code usa para autocompletar): [`docs/esquemas/gabarito.schema.json`](esquemas/gabarito.schema.json)
+- **Validador:** `arquiteto_auditor.avaliacao.gabarito.carregar_gabarito()`. Ele lista todos os erros de uma vez, em português.
+
+| Campo | Obrigatório | Conteúdo |
+|---|---|---|
+| `conjunto` | sim | Identificador do conjunto (minúsculas, números e hífen), ex.: `sint-007` |
+| `versao_gabarito` | sim | Número inteiro ≥ 1; aumenta quando o gabarito é corrigido |
+| `rodada` | sim | `R00`, `R01`… |
+| `conjunto_anterior` | se houver comparação | Conjunto da rodada anterior (ex.: o R00 de um R01) |
+| `reservado_avaliacao` | não | `true` para conjuntos que não podem ser usados no desenvolvimento (§4) |
+| `descricao`, `zona` | não | Texto livre / zona urbanística do lote |
+| `valores_esperados` | não | Por chave, o valor em cada fonte: `prancha`, `memorial`, `matricula` (estado atual), `escritura`, `consulta_previa`, `lei_municipal`, `norma_condominio`, `prefeitura`, `condominio`, `adotado`, `calculado` |
+| `itens_esperados` | sim | Lista de `{chave, escopo?, status, descricao?, documentos?, valor_projeto?, limite?}`. `status` ∈ `atende`, `nao_atende`, `divergente`, `nao_verificavel` |
+| `comparacao_rodada_anterior` | não (proibido em R00) | Lista de `{chave, escopo?, resultado}`. `resultado` ∈ `resolvido`, `pendente`, `novo`, `nao_verificavel_agora` |
+
+Regras verificadas automaticamente:
+- toda chave precisa existir no catálogo;
+- chaves com escopo (`AREA_CONSTR_PAV`, `COTA_INDEFINIDA`) exigem `escopo`, e as demais não podem tê-lo;
+- não pode haver item duplicado.
+
+**Erros esperados** (a base da revocação) são os itens com `nao_atende` ou `divergente`.
 
 ---
 

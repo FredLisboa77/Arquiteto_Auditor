@@ -34,7 +34,7 @@ Documentação de referência: `docs/01-viabilidade.md` · `docs/02-mvp.md` · `
 4. **Anti-alucinação:** saída do LLM sempre em JSON validado por esquema; o código confere que o trecho citado existe no texto-fonte e contém o número; números são relidos do trecho pelo código. Falhou → descarta ou marca pendente.
 5. **Baixa confiança é visível:** OCR com baixa confiança, associação incerta, parâmetro ambíguo e dado não encontrado vão para a tela de confirmação antes do relatório final.
 6. **Na dúvida, não afirmar:** preferir "pendente de confirmação" / "não foi possível verificar" a um falso "atende".
-7. **Prefeitura × condomínio:** adotar o mais restritivo e sinalizar.
+7. **Hierarquia dos documentos: a prefeitura prevalece sobre o condomínio.** Essa regra foi definida pelo usuário em 30/10/2026 e substitui a regra do "mais restritivo". Parâmetro definido só por um dos dois → usar esse. Definido pelos dois com valores diferentes → adotar o da prefeitura e registrar o valor do condomínio como observação no item.
 8. **Fórmulas:** usar a da lei quando encontrada; senão a padrão de `formulas.toml`, declarada no relatório.
 9. **O software nunca altera documentos de entrada.**
 10. **Ferramentas gratuitas e de código aberto**; algo pago só com justificativa e alternativa gratuita ao lado. Licença do projeto: **AGPL-3.0** — dependências precisam ser compatíveis.

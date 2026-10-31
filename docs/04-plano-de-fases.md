@@ -12,13 +12,13 @@
 |---|---|---|---|
 | 0 | Planejamento | — | Estes documentos, `CLAUDE.md`, `.gitignore`, pastas ✅ |
 | 1 | Ambiente e proteção | 1–2 | `pip` funcionando, Tesseract, esqueleto do projeto, anti-vazamento, repositório no GitHub ✅ (30/10/2026) |
-| 2 | Modelo de dados e gabarito | 2–3 | Classes de domínio + formato JSON do gabarito + normalizador de números |
+| 2 | Modelo de dados e gabarito | 2–3 | Classes de domínio + formato JSON do gabarito + normalizador de números ✅ (30/10/2026) |
 | 3 | Base sintética I — pranchas | 3–4 | Gerador de pranchas vetoriais variadas + diagnóstico dos PDFs reais |
 | 4 | Base sintética II — escaneados, memoriais, leis, revisões | 3–4 | Matrículas/escrituras "escaneadas", memoriais, leis, normas, conjunto R00/R01 |
 | 5 | Ingestão e OCR | 2–3 | Qualquer PDF → páginas com palavras, coordenadas e confiança |
 | 6 | Extração das pranchas | 4–6 | Carimbo, quadro de áreas, recuos rotulados, identificação |
 | 7 | Extração de matrícula, escritura e memorial | 3–5 | Estado atual do imóvel com averbações; dados do memorial |
-| 8 | Extração de parâmetros (LLM) | 4–6 | Parâmetros da zona com trecho e página, mais restritivo |
+| 8 | Extração de parâmetros (LLM) | 4–6 | Parâmetros da zona com trecho e página, hierarquia prefeitura > condomínio |
 | 9 | Motor de verificação | 2–3 | Itens classificados com margem e quantidade sugerida |
 | 10 | Interface I — análise e confirmação | 3–4 | Upload, progresso, pendências com recorte da página |
 | 11 | Relatório (tela, PDF, DOCX) | 3–4 | Relatório R00 exportável |
@@ -63,9 +63,9 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 4. Normalizador de números/unidades brasileiros.
 
 **Critérios de aceite**
-- [ ] ≥ 40 testes do normalizador passam ("1.234,56 m²", "5,00m", "60 %", "0,6", "dois pavimentos", "R$" ignorado…).
-- [ ] Um gabarito de exemplo valida; um gabarito com erro de formato é rejeitado com mensagem compreensível.
-- [ ] Você revisa e aprova a lista de chaves e o formato do gabarito.
+- [x] ≥ 40 testes do normalizador passam (68 testes, em `tests/test_numeros.py`).
+- [x] Um gabarito de exemplo valida; um gabarito com erro de formato é rejeitado com mensagem compreensível.
+- [x] Você revisa e aprova a lista de chaves (`src/arquiteto_auditor/dominio/catalogo.toml`) e o formato do gabarito (`docs/esquemas/exemplo_gabarito.json`).
 
 ---
 
@@ -129,7 +129,7 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 - [ ] Zona identificada ou perguntada; nunca presumida.
 - [ ] ≥ 90% dos parâmetros sintéticos corretos; 100% com trecho literal verificado.
 - [ ] Teste de alucinação: com a lei sem o parâmetro, o sistema responde "não encontrado" (não inventa).
-- [ ] Conflito prefeitura × condomínio → mais restritivo + item de sinalização.
+- [ ] Conflito prefeitura × condomínio → adota o da prefeitura e registra observação com o valor do condomínio. Parâmetro só do condomínio (ex.: altura de muro) → usa o do condomínio.
 
 ## Fase 9 — Motor de verificação
 **Critérios de aceite**

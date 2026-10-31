@@ -1,0 +1,266 @@
+{
+  "$defs": {
+    "ComparacaoEsperada": {
+      "additionalProperties": false,
+      "properties": {
+        "chave": {
+          "title": "Chave",
+          "type": "string"
+        },
+        "escopo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Escopo"
+        },
+        "resultado": {
+          "$ref": "#/$defs/ResultadoComparacao"
+        }
+      },
+      "required": [
+        "chave",
+        "resultado"
+      ],
+      "title": "ComparacaoEsperada",
+      "type": "object"
+    },
+    "ItemEsperado": {
+      "additionalProperties": false,
+      "properties": {
+        "chave": {
+          "title": "Chave",
+          "type": "string"
+        },
+        "escopo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Escopo"
+        },
+        "status": {
+          "$ref": "#/$defs/StatusItem"
+        },
+        "descricao": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Descricao"
+        },
+        "documentos": {
+          "items": {
+            "enum": [
+              "prancha",
+              "memorial",
+              "matricula",
+              "escritura",
+              "consulta_previa",
+              "lei_municipal",
+              "norma_condominio"
+            ],
+            "type": "string"
+          },
+          "title": "Documentos",
+          "type": "array"
+        },
+        "valor_projeto": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valor Projeto"
+        },
+        "limite": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Limite"
+        }
+      },
+      "required": [
+        "chave",
+        "status"
+      ],
+      "title": "ItemEsperado",
+      "type": "object"
+    },
+    "ResultadoComparacao": {
+      "description": "Situação de um item em relação à rodada anterior (R00 → R01).",
+      "enum": [
+        "resolvido",
+        "pendente",
+        "novo",
+        "nao_verificavel_agora"
+      ],
+      "title": "ResultadoComparacao",
+      "type": "string"
+    },
+    "StatusItem": {
+      "enum": [
+        "atende",
+        "nao_atende",
+        "divergente",
+        "nao_verificavel"
+      ],
+      "title": "StatusItem",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "$Schema"
+    },
+    "conjunto": {
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "title": "Conjunto",
+      "type": "string"
+    },
+    "versao_gabarito": {
+      "minimum": 1,
+      "title": "Versao Gabarito",
+      "type": "integer"
+    },
+    "rodada": {
+      "pattern": "^R\\d{2}$",
+      "title": "Rodada",
+      "type": "string"
+    },
+    "conjunto_anterior": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Conjunto Anterior"
+    },
+    "reservado_avaliacao": {
+      "default": false,
+      "title": "Reservado Avaliacao",
+      "type": "boolean"
+    },
+    "descricao": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Descricao"
+    },
+    "zona": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Zona"
+    },
+    "valores_esperados": {
+      "additionalProperties": {
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "propertyNames": {
+          "enum": [
+            "prancha",
+            "memorial",
+            "matricula",
+            "escritura",
+            "consulta_previa",
+            "lei_municipal",
+            "norma_condominio",
+            "prefeitura",
+            "condominio",
+            "adotado",
+            "calculado"
+          ]
+        },
+        "type": "object"
+      },
+      "title": "Valores Esperados",
+      "type": "object"
+    },
+    "itens_esperados": {
+      "items": {
+        "$ref": "#/$defs/ItemEsperado"
+      },
+      "minItems": 1,
+      "title": "Itens Esperados",
+      "type": "array"
+    },
+    "comparacao_rodada_anterior": {
+      "items": {
+        "$ref": "#/$defs/ComparacaoEsperada"
+      },
+      "title": "Comparacao Rodada Anterior",
+      "type": "array"
+    }
+  },
+  "required": [
+    "conjunto",
+    "versao_gabarito",
+    "rodada",
+    "itens_esperados"
+  ],
+  "title": "Gabarito",
+  "type": "object"
+}

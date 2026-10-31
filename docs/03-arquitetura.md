@@ -57,7 +57,7 @@
         ValoresExtraídos (valor, unidade, Evidência[arquivo, página, bbox, trecho], confiança, origem)
               ▼
         [5 Consolidação] estado atual da matrícula (aplica averbações em ordem)
-                         zona do lote → parâmetros aplicáveis; prefeitura × condomínio → mais restritivo
+                         zona do lote → parâmetros aplicáveis; prefeitura prevalece sobre condomínio
               ▼
         [6 Revisão humana] pendências (baixa confiança / ambíguo / não encontrado) → você confirma
               ▼
@@ -130,7 +130,7 @@ Pacote: `src/arquiteto_auditor/`
 | `extracao/memorial/` | Campos de identificação e numéricos do memorial. |
 | `extracao/parametros/` | Zona do lote, busca de trechos na lei/norma, extração com citação, normalização de unidades. |
 | `llm/` | Adaptador Ollama, *prompts* versionados (arquivos de texto), esquemas JSON, validação de citação, *fallback* sem LLM. |
-| `verificacao/` | Catálogo de regras (chaves estáveis), fórmulas (padrão + configuráveis), tolerâncias, "mais restritivo", cálculo de margem e da quantidade sugerida (ex.: m² a reduzir). |
+| `verificacao/` | Catálogo de regras (chaves estáveis), fórmulas (padrão + configuráveis), tolerâncias, hierarquia prefeitura > condomínio, cálculo de margem e da quantidade sugerida (ex.: m² a reduzir). |
 | `versionamento/` | Identificação de "mesmo projeto", comparação entre rodadas, congelamento de relatório emitido. |
 | `relatorio/` | Montagem do `Relatorio`; renderizadores PDF e DOCX; textos-modelo; aviso de responsabilidade. |
 | `persistencia/` | Repositório SQLite (salvar/carregar tudo acima); caminhos de dados. |
@@ -169,7 +169,7 @@ Lista cronológica de atos → aplicados em ordem; cada campo do "estado atual" 
 4. LLM extrai `{parametro, valor, unidade, condicao, trecho, pagina}`.
 5. Código valida a citação e normaliza o número.
 6. Conflito/ambiguidade (dois valores para a mesma zona, exceções) → você escolhe.
-7. Prefeitura × condomínio → mais restritivo (mín. de máximos; máx. de mínimos) e item informativo.
+7. Hierarquia: **a prefeitura prevalece sobre o condomínio**. Parâmetro definido só por um dos dois → usa esse. Definido pelos dois com valores diferentes → adota o da prefeitura e registra observação no item, com o valor e o trecho do condomínio.
 
 ### 5.5 Fórmulas
 Arquivo `formulas.toml` com a fórmula padrão de cada índice (ex.: TO = projeção da edificação ÷ área do terreno) e as exclusões consideradas. Quando a lei define a fórmula, o sistema registra o trecho e você confirma qual usar. O relatório sempre diz qual critério foi usado.

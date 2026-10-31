@@ -1,0 +1,41 @@
+{
+  "$schema": "./gabarito.schema.json",
+  "conjunto": "sint-exemplo-r01",
+  "versao_gabarito": 1,
+  "rodada": "R01",
+  "conjunto_anterior": "sint-exemplo-r00",
+  "descricao": "Exemplo fictício: revisão R01 que corrigiu a matrícula, manteve a TO acima do limite e passou a omitir o Norte.",
+  "zona": "ZR-2",
+  "valores_esperados": {
+    "TERRENO_AREA": { "prancha": 450.0, "memorial": 450.0, "matricula": 452.3, "escritura": 450.0 },
+    "ID_MATRICULA": { "prancha": "12.345", "matricula": "12.345" },
+    "TO_MAX": { "prefeitura": 60.0, "condominio": 50.0, "adotado": 60.0 },
+    "MURO_ALTURA_MAX": { "condominio": 1.8, "prancha": 2.2 }
+  },
+  "itens_esperados": [
+    {
+      "chave": "TERRENO_AREA",
+      "status": "divergente",
+      "descricao": "Matrícula com averbação de retificação para 452,30 m²; prancha mantém 450,00 m².",
+      "documentos": ["prancha", "matricula"]
+    },
+    { "chave": "ID_MATRICULA", "status": "atende" },
+    {
+      "chave": "TO_MAX",
+      "status": "nao_atende",
+      "descricao": "TO de 62% acima do limite da prefeitura (60%), que prevalece sobre o do condomínio (50%); o conflito vira observação no item.",
+      "valor_projeto": 62.0,
+      "limite": 60.0
+    },
+    { "chave": "MURO_ALTURA_MAX", "status": "nao_atende", "valor_projeto": 2.2, "limite": 1.8 },
+    { "chave": "AREA_CONSTR_PAV", "escopo": "pavimento=1", "status": "atende" },
+    { "chave": "COTA_INDEFINIDA", "escopo": "elemento=recuo_fundos", "status": "nao_atende" },
+    { "chave": "NORTE_INDICADO", "status": "nao_atende" },
+    { "chave": "RECUO_FRONTAL", "status": "atende" }
+  ],
+  "comparacao_rodada_anterior": [
+    { "chave": "ID_MATRICULA", "resultado": "resolvido" },
+    { "chave": "TO_MAX", "resultado": "pendente" },
+    { "chave": "NORTE_INDICADO", "resultado": "novo" }
+  ]
+}

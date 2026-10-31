@@ -80,7 +80,7 @@ Escala: 🟢 fácil/maduro · 🟡 exige cuidado · 🔴 difícil (precisa de co
 | 7 | OCR de matrícula/escritura **digitadas** | 🟢/🟡 | Tesseract vai muito bem em texto datilografado/impresso. Carimbos, selos e assinaturas sobrepostos derrubam a confiança **localmente** — exatamente o que queremos sinalizar. |
 | 8 | Reconstruir o **estado atual** do imóvel pelas averbações | 🔴 | Exige ler a sequência R-1, AV-2, AV-3… e entender que "AV-5: retificação de área para 452,30 m²" substitui o valor original. Estratégia: regex separa os atos; LLM classifica cada ato e extrai valores; **código** aplica em ordem; você confirma. |
 | 9 | Achar parâmetros dentro de **uma lei inteira** | 🔴 | Leis têm dezenas/centenas de páginas, tabelas em anexo, remissões ("conforme Anexo III"), exceções. Ver R3. |
-| 10 | Comparar números, aplicar o mais restritivo | 🟢 | Código determinístico puro. |
+| 10 | Comparar números, aplicar a hierarquia prefeitura > condomínio | 🟢 | Código determinístico puro. |
 | 11 | Gerar sugestões quantificadas | 🟢 | O **número** (ex.: "reduzir 8 m²") vem do código; o LLM só redige a frase. Há texto-modelo de reserva se o LLM falhar. |
 | 12 | Relatório em tela, PDF e DOCX | 🟢 | Bibliotecas maduras (ReportLab, python-docx). |
 | 13 | Versões R00/R01 e comparação item a item | 🟢/🟡 | Lógica simples **se** cada item tiver uma "chave estável" (ex.: `TO_MAX`, `RECUO_FRONTAL`). Projetado desde o início. |

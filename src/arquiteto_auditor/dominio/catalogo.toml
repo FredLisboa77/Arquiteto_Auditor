@@ -1,0 +1,227 @@
+# Catálogo de verificações do Arquiteto Auditor.
+#
+# Cada [[verificacao]] tem uma CHAVE ESTÁVEL: é ela que permite comparar o relatório R00
+# com o R01 ("resolvido", "pendente", "novo"). NÃO renomeie chaves existentes (CLAUDE.md §3.13).
+#
+# tipo:   identificacao | consistencia | parametro | aritmetica | completude
+# escopo: (opcional) o item se repete por "pavimento" ou por "elemento" (ex.: cada cota)
+#
+# Hierarquia: a documentação da prefeitura prevalece sobre a do condomínio.
+# Conflito prefeitura × condomínio não é um item separado: vira uma observação no item do
+# parâmetro (ex.: TO_MAX), que adota o valor da prefeitura.
+
+# ------------------------------------------------------------------ Identificação
+
+[[verificacao]]
+chave = "ID_MATRICULA"
+nome = "Número da matrícula"
+tipo = "identificacao"
+descricao = "Número da matrícula igual nas pranchas, memorial, certidão de inteiro teor e escritura."
+
+[[verificacao]]
+chave = "ID_CARTORIO"
+nome = "Cartório de registro"
+tipo = "identificacao"
+descricao = "Cartório de registro de imóveis coincidente entre os documentos."
+
+[[verificacao]]
+chave = "ID_LOTE_QUADRA"
+nome = "Lote e quadra"
+tipo = "identificacao"
+descricao = "Lote e quadra coincidentes entre pranchas, memorial, matrícula e escritura."
+
+[[verificacao]]
+chave = "ID_CONDOMINIO"
+nome = "Condomínio"
+tipo = "identificacao"
+descricao = "Nome do condomínio coincidente entre os documentos."
+
+[[verificacao]]
+chave = "ID_ENDERECO"
+nome = "Endereço do imóvel"
+tipo = "identificacao"
+descricao = "Endereço coincidente entre os documentos."
+
+[[verificacao]]
+chave = "ID_AUTOR_REGISTRO"
+nome = "Autor do projeto e registro profissional"
+tipo = "identificacao"
+descricao = "Autor e registro CAU/CREA presentes e iguais em todas as pranchas e no memorial."
+
+[[verificacao]]
+chave = "ID_RRT_ART"
+nome = "RRT/ART"
+tipo = "identificacao"
+descricao = "Número do RRT ou ART indicado e coincidente entre os documentos."
+
+[[verificacao]]
+chave = "ID_REVISAO"
+nome = "Revisão do projeto"
+tipo = "identificacao"
+descricao = "Mesma revisão indicada no carimbo de todas as pranchas do conjunto."
+
+[[verificacao]]
+chave = "ID_PROPRIETARIO"
+nome = "Identificação do proprietário"
+tipo = "identificacao"
+descricao = "Proprietário identificado no carimbo e/ou memorial e coerente com o estado atual da matrícula."
+
+# ------------------------------------------------------------------ Consistência entre documentos
+
+[[verificacao]]
+chave = "TERRENO_AREA"
+nome = "Área do terreno"
+tipo = "consistencia"
+descricao = "Área do terreno igual na prancha, no memorial, na matrícula (estado atual, com averbações) e na escritura."
+
+[[verificacao]]
+chave = "TERRENO_TESTADA"
+nome = "Testada do terreno"
+tipo = "consistencia"
+descricao = "Testada igual na prancha, na matrícula e na escritura."
+
+[[verificacao]]
+chave = "AREA_CONSTR_PAV"
+nome = "Área construída por pavimento"
+tipo = "consistencia"
+escopo = "pavimento"
+descricao = "Área construída de cada pavimento igual no quadro de áreas e no memorial."
+
+[[verificacao]]
+chave = "AREA_CONSTR_TOTAL"
+nome = "Área construída total"
+tipo = "consistencia"
+descricao = "Área construída total igual no quadro de áreas e no memorial."
+
+# ------------------------------------------------------------------ Aritmética (declarado × recalculado)
+
+[[verificacao]]
+chave = "AREA_CONSTR_SOMA"
+nome = "Soma das áreas dos pavimentos"
+tipo = "aritmetica"
+descricao = "A soma das áreas dos pavimentos é igual à área total declarada."
+
+[[verificacao]]
+chave = "TO_DECLARADA"
+nome = "Taxa de ocupação declarada"
+tipo = "aritmetica"
+descricao = "A taxa de ocupação declarada é igual à recalculada (projeção ÷ área do terreno)."
+
+[[verificacao]]
+chave = "CA_DECLARADO"
+nome = "Coeficiente de aproveitamento declarado"
+tipo = "aritmetica"
+descricao = "O coeficiente de aproveitamento declarado é igual ao recalculado (área computável ÷ área do terreno)."
+
+[[verificacao]]
+chave = "PERMEAVEL_DECLARADA"
+nome = "Taxa de permeabilidade declarada"
+tipo = "aritmetica"
+descricao = "A taxa de permeabilidade declarada é igual à recalculada (área permeável ÷ área do terreno)."
+
+# ------------------------------------------------------------------ Parâmetros (prefeitura e condomínio)
+
+[[verificacao]]
+chave = "LOTE_AREA_MIN"
+nome = "Área mínima do lote"
+tipo = "parametro"
+descricao = "Área do lote maior ou igual à mínima exigida."
+
+[[verificacao]]
+chave = "LOTE_TESTADA_MIN"
+nome = "Testada mínima"
+tipo = "parametro"
+descricao = "Testada do lote maior ou igual à mínima exigida."
+
+[[verificacao]]
+chave = "RECUO_FRONTAL"
+nome = "Recuo frontal"
+tipo = "parametro"
+descricao = "Recuo frontal maior ou igual ao mínimo exigido."
+
+[[verificacao]]
+chave = "RECUO_LATERAL_E"
+nome = "Recuo lateral esquerdo"
+tipo = "parametro"
+descricao = "Recuo lateral esquerdo maior ou igual ao mínimo exigido."
+
+[[verificacao]]
+chave = "RECUO_LATERAL_D"
+nome = "Recuo lateral direito"
+tipo = "parametro"
+descricao = "Recuo lateral direito maior ou igual ao mínimo exigido."
+
+[[verificacao]]
+chave = "RECUO_FUNDOS"
+nome = "Recuo de fundos"
+tipo = "parametro"
+descricao = "Recuo de fundos maior ou igual ao mínimo exigido."
+
+[[verificacao]]
+chave = "TO_MAX"
+nome = "Taxa de ocupação máxima"
+tipo = "parametro"
+descricao = "Taxa de ocupação do projeto menor ou igual à máxima permitida."
+
+[[verificacao]]
+chave = "CA_MAX"
+nome = "Coeficiente de aproveitamento máximo"
+tipo = "parametro"
+descricao = "Coeficiente de aproveitamento do projeto menor ou igual ao máximo permitido."
+
+[[verificacao]]
+chave = "PERMEAVEL_MIN"
+nome = "Permeabilidade mínima"
+tipo = "parametro"
+descricao = "Área/taxa permeável do projeto maior ou igual à mínima exigida."
+
+[[verificacao]]
+chave = "ALTURA_MAX"
+nome = "Altura máxima da edificação"
+tipo = "parametro"
+descricao = "Altura da edificação menor ou igual à máxima permitida."
+
+[[verificacao]]
+chave = "PAVIMENTOS_MAX"
+nome = "Número máximo de pavimentos"
+tipo = "parametro"
+descricao = "Número de pavimentos menor ou igual ao máximo permitido."
+
+[[verificacao]]
+chave = "MURO_ALTURA_MAX"
+nome = "Altura máxima de muro"
+tipo = "parametro"
+descricao = "Altura dos muros e fechamentos (frente e divisas) menor ou igual à máxima permitida, e coerente entre corte, fachada e memorial."
+
+# ------------------------------------------------------------------ Completude e apresentação
+
+[[verificacao]]
+chave = "COTA_INDEFINIDA"
+nome = "Cotas e dimensões essenciais"
+tipo = "completude"
+escopo = "elemento"
+descricao = "Dimensão essencial (testadas, lados do lote, recuos, alturas, dimensões externas) indicada por cota numérica, não apenas graficamente."
+
+[[verificacao]]
+chave = "NORTE_INDICADO"
+nome = "Indicação do Norte"
+tipo = "completude"
+descricao = "Indicação do Norte presente nas plantas de situação e de localização."
+
+[[verificacao]]
+chave = "ASSINATURA_AUTOR"
+nome = "Assinatura do autor do projeto"
+tipo = "completude"
+descricao = "Assinatura do autor do projeto presente nas pranchas e no memorial."
+
+[[verificacao]]
+chave = "ASSINATURA_PROPRIETARIO"
+nome = "Assinatura do proprietário"
+tipo = "completude"
+descricao = "Assinatura do proprietário presente onde exigida."
+
+[[verificacao]]
+chave = "ASSINATURA_DIGITAL_VALIDA"
+nome = "Integridade da assinatura digital"
+tipo = "completude"
+descricao = "Assinatura digital íntegra (documento não alterado após assinar), com titular identificado. Validação oficial ICP-Brasil fica como orientação ao revisor."
