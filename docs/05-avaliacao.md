@@ -70,13 +70,15 @@ Regras verificadas automaticamente:
 |---|---|---|
 | Ingestão | vetorial × escaneado correto | 100% |
 | Classificação | tipo de documento correto | ≥ 95% |
-| OCR | CER em matrículas de qualidade boa / média / ruim | ≤ 1% / ≤ 3% / ≤ 8% |
+| OCR | CER em matrículas de qualidade boa / média / ruim (medido como "texto errado"*) | ≤ 1% / ≤ 3% / ≤ 8% |
 | Extração pranchas | campos corretos (identificação / numéricos) | ≥ 95% / ≥ 90% |
 | Registro | atos separados / estado atual correto | ≥ 95% / ≥ 90% |
 | Parâmetros | parâmetros corretos / com citação verificada | ≥ 90% / 100% |
 | Confiança | dos valores errados, quantos estavam marcados "pendente" | ≥ 80% |
 | Confiança | dos valores marcados "pendente", quantos estavam certos (incômodo) | registrar; ideal ≤ 50% |
 | Desempenho | tempo por projeto completo | ≤ 8 min (primeira vez) |
+
+\* Decisão do usuário (01/11/2026): o CER das metas conta só os caracteres do documento lidos errado ou perdidos ("texto errado"). O texto lido a mais (carimbos, selos, rubricas, marca "CÓPIA" — impressos na imagem, mas fora da verdade sintética) é mostrado à parte por `scripts/avaliar_ingestao.py` e não entra na meta.
 
 A métrica de **confiança** é chave: um sistema que erra mas **sabe que errou** (e te pede confirmação) é útil; um que erra com confiança alta é perigoso.
 

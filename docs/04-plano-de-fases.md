@@ -116,11 +116,12 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 ---
 
 ## Fase 5 — Ingestão e OCR
-**Critérios de aceite**
-- [ ] Classifica vetorial × escaneado corretamente em 100% das páginas sintéticas.
-- [ ] Classifica o tipo de documento corretamente em ≥ 95% dos sintéticos.
-- [ ] OCR das matrículas sintéticas de qualidade média com taxa de erro de caracteres (CER) ≤ 3%.
-- [ ] Cada palavra tem bbox e confiança; resultados em cache (segunda execução < 2 s).
+**Critérios de aceite** — concluída em 01/11/2026 (`scripts/avaliar_ingestao.py`, conjuntos de desenvolvimento)
+- [x] Classifica vetorial × escaneado corretamente em 100% das páginas sintéticas (405/405).
+- [x] Classifica o tipo de documento corretamente em ≥ 95% dos sintéticos (83/83).
+- [x] OCR das matrículas sintéticas de qualidade média com taxa de erro de caracteres (CER) ≤ 3%: 1,4% de "texto errado" (critério definido pelo usuário — docs/05 §3.3); o CER bruto (7,5%) inclui carimbos, selo e "CÓPIA", que a verdade exclui.
+- [x] Cada palavra tem bbox e confiança; resultados em cache (segunda execução < 2 s: lei de 23 páginas em ~1 s).
+- Limitação conhecida: matrícula de qualidade "ruim" com 41% de texto errado (meta de ≤ 8% fica para a Fase 13); a confiança baixa a manda para "pendente".
 
 ## Fase 6 — Extração das pranchas
 **Critérios de aceite**
