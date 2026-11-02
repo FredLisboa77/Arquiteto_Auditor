@@ -133,10 +133,12 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 - Limitações conhecidas: cotas com setas não reconhecidas; altura só em cota sem rótulo e cadeia de cotas incompleta não são extraídas ("não encontrado"); sem raízes ICP-Brasil locais, a cadeia de confiança não é verificada; o sint-002 tem o cartório cortado na borda da folha (defeito do gerador). Conjuntos reservados ficam para a Fase 13.
 
 ## Fase 7 — Matrícula, escritura e memorial
-**Critérios de aceite**
-- [ ] Atos separados corretamente em ≥ 95% dos sintéticos.
-- [ ] Estado atual correto (com retificações) em ≥ 90%; cada campo aponta o ato de origem.
-- [ ] Valores de OCR com baixa confiança aparecem como pendentes.
+**Critérios de aceite** — concluída em 01/11/2026 (`scripts/avaliar_registro.py` e `scripts/avaliar_memorial.py`, conjuntos de desenvolvimento)
+- [x] Atos separados corretamente em ≥ 95% dos sintéticos (38/39 = 97,4%; nenhum ato a mais).
+- [x] Estado atual correto (com retificações) em ≥ 90%; cada campo aponta o ato de origem (33/36 = 91,7%; 36/36 com ato de origem).
+- [x] Valores de OCR com baixa confiança aparecem como pendentes (em todos os leitores; limite configurável em `ocr.limiar_confianca`).
+- Além dos critérios: escritura 36/36; memorial com identificação 57/60 e numéricos 195/204; nenhum valor errado sem pendência.
+- Limitações conhecidas: na matrícula "ruim" um ato fica ilegível (vira pendência e deixa o estado pendente); erros de OCR restantes aparecem como pendentes, não são corrigidos; a área da escritura é a da data da venda (a atual vale pela matrícula). Conjuntos reservados ficam para a Fase 13.
 
 ## Fase 8 — Parâmetros (prefeitura e condomínio)
 **Critérios de aceite**

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 
+from arquiteto_auditor.config import limiar_confianca_ocr
 from arquiteto_auditor.dominio.datas import encontrar_data
 from arquiteto_auditor.dominio.documento import DocumentoLido
 from arquiteto_auditor.dominio.modelos import OrigemValor, StatusConfirmacao, ValorExtraido
@@ -21,7 +22,6 @@ from arquiteto_auditor.dominio.registro import EscrituraLida
 from arquiteto_auditor.extracao.registro.comum import ler_area, ler_nome
 from arquiteto_auditor.extracao.texto_corrido import TextoCorrido, normalizar
 
-LIMIAR_OCR = 0.6
 CONFIANCA = 0.9
 
 _NUMERO = r"(?:N[º°O.]?)?\s*"  # "nº" opcional (o "º" conta como letra nas expressões)
@@ -51,7 +51,7 @@ def ler_escritura(documento: DocumentoLido) -> EscrituraLida:
         ocr = corrido.confianca(*confianca_de)
         evidencia = evidencia.model_copy(update={"confianca_ocr": ocr})
         motivos = [motivo_extra] if motivo_extra else []
-        if ocr is not None and ocr < LIMIAR_OCR:
+        if ocr is not None and ocr < limiar_confianca_ocr():
             motivos.append(f"leitura (OCR) com baixa confiança ({ocr:.2f})")
         campos[campo] = ValorExtraido(
             campo=campo, valor=valor, unidade=unidade,

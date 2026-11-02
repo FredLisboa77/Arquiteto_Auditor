@@ -186,3 +186,11 @@ def test_numero_do_extenso_de_area():
                              "cinco decímetros quadrados") == 446  # a parte inteira
     assert numero_do_extenso("trezentos e. sessenta metros quadrados") == 360  # sujeira de OCR
     assert numero_do_extenso("sem número") is None
+
+
+def test_m2_mal_lido_pelo_ocr():
+    """O OCR costuma ler "m²" como "m?": no fim de uma medida, vale como m²."""
+    lido = ler_valor("375,00 m?")
+    assert lido is not None and lido.valor == 375.0 and lido.unidade == "m2"
+    (achado,) = encontrar_valores("área de 450,00 m?, conforme matrícula")
+    assert achado.unidade == "m2"

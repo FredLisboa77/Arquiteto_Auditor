@@ -16,7 +16,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
-from arquiteto_auditor.dominio.documento import OrigemPalavra, PaginaLida
+from arquiteto_auditor.dominio.documento import OrigemPalavra, PaginaLida, Palavra
 from arquiteto_auditor.dominio.modelos import Evidencia, OrigemValor, ValorExtraido
 from arquiteto_auditor.extracao.pranchas.linhas import (
     LinhaTexto,
@@ -54,12 +54,17 @@ DISTANCIA_ABAIXO = 12  # em alturas de letra (células altas); para no primeiro 
 CONFIANCA = {"mesma linha": 0.95, "direita": 0.95, "abaixo": 0.9}
 
 _CPF = re.compile(r"\s*[—–-]?\s*\bCPF\b.*$|\d{3}\.\d{3}\.\d{3}-\d{2}", re.IGNORECASE)
-_MATRICULA = re.compile(r"^\s*(?:N[º°o.]?\s*)?(\d[\d.]*\d|\d)\s*(?:[—–-]\s*(.*))?$")
+# "71.677 — 3º Ofício..." ou "nº 71.677 do 3º Ofício..."
+_MATRICULA = re.compile(
+    r"^\s*(?:[Nn][º°o.]?\s*)?(\d[\d.]*\d|\d)\s*(?:(?:[—–-]|\bd[oa]\b|\bn[oa]\b)\s*(.*))?$")
+_REGISTRO_JUNTO = re.compile(r"^(?P<nome>.+?)\s+[—–-]\s+(?P<registro>(?:CAU|CREA)\b.+)$",
+                             re.IGNORECASE)  # "Fulana - CAU A123" (autor e registro juntos)
 
 
 def _normalizar(texto: str) -> str:
     sem_acento = unicodedata.normalize("NFD", texto.upper())
     sem_acento = "".join(c for c in sem_acento if not unicodedata.combining(c))
+    sem_acento = re.sub(r"\((?:A|O|S|AS|OS|ES)\)", " ", sem_acento)  # "Proprietário(a)"
     sem_acento = re.sub(r"[.:º°ª]", " ", sem_acento).replace("/", " / ")
     return " ".join(sem_acento.split())
 
@@ -114,6 +119,8 @@ def _separar(campo: str, texto: str) -> list[tuple[str, str]]:
     if campo == "LOTE_QUADRA":
         partes = [p.strip() for p in re.split(r"\s*/\s*|\s+[—–-]\s+", texto)]
         return list(zip(("LOTE", "QUADRA"), partes, strict=False)) if len(partes) == 2 else []
+    if campo == "AUTOR" and (junto := _REGISTRO_JUNTO.match(texto)):
+        return [("AUTOR", junto["nome"].strip()), ("AUTOR_REGISTRO", junto["registro"].strip())]
     if campo == "MATRICULA":
         m = _MATRICULA.match(texto)
         if not m:
@@ -125,9 +132,29 @@ def _separar(campo: str, texto: str) -> list[tuple[str, str]]:
     return [(campo, texto)]
 
 
+def _separar_dois_pontos(palavras: list[Palavra]) -> list[Palavra]:
+    """ "Matrícula:nº" (OCR sem espaço depois dos dois-pontos) vira "Matrícula:" e "nº".
+
+    A posição de cada parte é estimada pela proporção de letras dentro da palavra.
+    """
+    resultado = []
+    for p in palavras:
+        posicao = p.texto.find(":")
+        if 0 < posicao < len(p.texto) - 1:
+            x0, y0, x1, y1 = p.bbox
+            corte = x0 + (x1 - x0) * (posicao + 1) / len(p.texto)
+            resultado.append(p.model_copy(update={"texto": p.texto[:posicao + 1],
+                                                  "bbox": (x0, y0, corte, y1)}))
+            resultado.append(p.model_copy(update={"texto": p.texto[posicao + 1:],
+                                                  "bbox": (corte, y0, x1, y1)}))
+        else:
+            resultado.append(p)
+    return resultado
+
+
 def ler_carimbo(pagina: PaginaLida, arquivo: str) -> list[ValorExtraido]:
     """Valores de identificação encontrados no carimbo (e em rótulos soltos) de uma página."""
-    linhas = agrupar_linhas(pagina.palavras)
+    linhas = agrupar_linhas(_separar_dois_pontos(pagina.palavras))
     rotulos = {id(ln): r for ln in linhas if (r := _rotulo(ln)) is not None}
     valores: list[ValorExtraido] = []
     for linha in linhas:

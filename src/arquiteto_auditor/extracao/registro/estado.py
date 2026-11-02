@@ -16,12 +16,12 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from arquiteto_auditor.config import limiar_confianca_ocr
 from arquiteto_auditor.dominio.modelos import OrigemValor, StatusConfirmacao, ValorExtraido
 from arquiteto_auditor.dominio.registro import AtoMatricula, TipoAto
 from arquiteto_auditor.extracao.registro.comum import AreaLida, NomeLido, ler_area, ler_nome
 from arquiteto_auditor.extracao.texto_corrido import TextoCorrido, normalizar
 
-LIMIAR_OCR = 0.6  # abaixo disso, o valor lido por OCR vai para confirmação
 TAMANHO_CABECALHO = 12  # "R-3/15.860": o código do ato, no início do cabeçalho
 CONFIANCA = 0.9
 
@@ -108,7 +108,7 @@ def calcular_estado(atos: list[AtoComPosicao], corrido: TextoCorrido, arquivo: s
         evidencia = evidencia.model_copy(update={"confianca_ocr": ocr})
         motivos = [descricao for posicao, descricao in nao_compreendidos
                    if posicao > atos[indice].inicio]
-        if ocr is not None and ocr < LIMIAR_OCR:
+        if ocr is not None and ocr < limiar_confianca_ocr():
             motivos.append(f"leitura (OCR) com baixa confiança ({ocr:.2f})")
         if isinstance(lido, NomeLido) and lido.limpo:
             motivos.append("sinais soltos do OCR removidos do nome")

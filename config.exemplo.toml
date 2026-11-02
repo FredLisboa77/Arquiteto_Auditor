@@ -13,6 +13,8 @@ dados = "dados_privados"
 tesseract_cmd = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 tessdata_dir = "modelos/tessdata"
 idioma = "por"
+# Valor lido por OCR com confiança abaixo deste limite vai para a confirmação do revisor.
+limiar_confianca = 0.6
 
 [llm]
 endereco = "http://127.0.0.1:11434"

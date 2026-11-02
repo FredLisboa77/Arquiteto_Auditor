@@ -49,6 +49,11 @@ def config_ocr() -> ConfigOCR:
     )
 
 
+def limiar_confianca_ocr() -> float:
+    """Abaixo desta confiança do OCR, o valor lido vai para a confirmação do revisor."""
+    return float(carregar_config().get("ocr", {}).get("limiar_confianca", 0.6))
+
+
 def pasta_de_dados() -> Path:
     """Onde ficam histórico, relatórios e cache (dados pessoais: nunca vão para o Git)."""
     return caminho_do_projeto(carregar_config().get("pastas", {}).get("dados", "dados_privados"))

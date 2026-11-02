@@ -32,7 +32,8 @@ _TAXA = ({"%", None}, "%")
 ROTULOS_QUADRO: dict[str, tuple[tuple[str, ...], set, str | None]] = {
     "TERRENO_AREA": (("AREA DO TERRENO", "AREA DO LOTE", "AREA TERRENO"), *_AREA),
     "AREA_CONSTR_PAV_1": (("AREA CONSTRUIDA TERREO", "AREA COBERTA TERREO", "AREA DO TERREO",
-                           "PAVIMENTO TERREO", "PAV TERREO", "AREA CONSTRUIDA PAV TERREO"),
+                           "PAVIMENTO TERREO", "PAV TERREO", "AREA CONSTRUIDA PAV TERREO",
+                           "AREA CONSTRUIDA PAVIMENTO TERREO"),
                           *_AREA),
     "AREA_CONSTR_PAV_2": (("AREA CONSTRUIDA PAV SUPERIOR", "AREA CONSTRUIDA PAVIMENTO SUPERIOR",
                            "AREA 1 PAVIMENTO", "AREA DO 1 PAVIMENTO", "PAVIMENTO SUPERIOR",
@@ -40,7 +41,8 @@ ROTULOS_QUADRO: dict[str, tuple[tuple[str, ...], set, str | None]] = {
                           *_AREA),
     "AREA_CONSTR_TOTAL": (("AREA CONSTRUIDA TOTAL", "AREA TOTAL CONSTRUIDA",
                            "TOTAL CONSTRUIDO", "AREA TOTAL DE CONSTRUCAO"), *_AREA),
-    "AREA_PROJECAO": (("AREA DE PROJECAO", "PROJECAO", "AREA PROJETADA"), *_AREA),
+    "AREA_PROJECAO": (("AREA DE PROJECAO", "PROJECAO", "AREA PROJETADA",
+                       "AREA DE PROJECAO DA EDIFICACAO"), *_AREA),
     "AREA_PERMEAVEL": (("AREA PERMEAVEL",), *_AREA),
     "TO_DECLARADA": (("TAXA DE OCUPACAO", "INDICE DE OCUPACAO", "T O"), *_TAXA),
     "CA_DECLARADO": (("COEFICIENTE DE APROVEITAMENTO", "INDICE DE APROVEITAMENTO", "C A"),
@@ -67,10 +69,20 @@ ROTULOS_QUADRO: dict[str, tuple[tuple[str, ...], set, str | None]] = {
 }
 SO_NA_MESMA_LINHA = {"TERRENO_TESTADA", "TERRENO_PROFUNDIDADE", "RECUO_FRONTAL", "RECUO_FUNDOS",
                      "RECUO_LATERAL_E", "RECUO_LATERAL_D", "MURO_ALTURA"}
-_PADROES = [
-    (campo, re.compile(r"(?<![A-Z0-9])" + r"\s+".join(rotulo.split()) + r"(?![A-Z0-9])"))
-    for campo, (rotulos, _, _) in ROTULOS_QUADRO.items() for rotulo in rotulos
-]
+def _padrao(rotulo: str) -> re.Pattern:
+    """Expressão do rótulo. Entre as palavras: espaços ou hífen ("Área construída - pavimento
+    térreo"); entre palavras de 3 letras ou mais, o espaço é opcional (o OCR cola palavras:
+    "Recuofrontal:5,50 m"). Palavras curtas ("T O", "C A") continuam separadas."""
+    palavras = rotulo.split()
+    expressao = palavras[0]
+    for anterior, palavra in zip(palavras, palavras[1:], strict=False):
+        opcional = len(anterior) >= 3 and len(palavra) >= 2
+        expressao += (r"[\s\-–—]*" if opcional else r"[\s\-–—]+") + palavra
+    return re.compile(r"(?<![A-Z0-9])" + expressao + r"(?![A-Z0-9])")
+
+
+_PADROES = [(campo, _padrao(rotulo)) for campo, (rotulos, _, _) in ROTULOS_QUADRO.items()
+            for rotulo in rotulos]
 _PREFIXO_CAD = re.compile(r"^\s*[A-Za-z]\s*=\s*")  # "A=", "C=", "H=" (docs/06 §2)
 _PREFIXO_CAD_NO_MEIO = re.compile(r"(?<![^\W\d_])[A-Za-z]\s*=")  # "MURO H=1.80m"
 CONFIANCA = {"mesma linha": 0.9, "direita": 0.9, "esquerda": 0.85, "abaixo": 0.85}

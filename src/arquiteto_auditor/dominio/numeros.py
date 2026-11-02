@@ -43,6 +43,7 @@ _NUMERO = r"""
 _UNIDADE = r"""
     (?P<unidade>
         m²|m2(?!\d)|m\^2|metros?\s+quadrados?
+      | m\?(?!\w)                          # "m²" mal lido pelo OCR
       | cm\b
       | metros?\b|mts?\b|m\b
       | %
@@ -66,7 +67,7 @@ def _normalizar_unidade(bruta: str | None) -> str | None:
     if not bruta:
         return None
     u = bruta.lower()
-    if u in ("m²", "m2", "m^2") or "quadrado" in u:
+    if u in ("m²", "m2", "m^2", "m?") or "quadrado" in u:
         return "m2"
     if u == "cm":
         return "cm"

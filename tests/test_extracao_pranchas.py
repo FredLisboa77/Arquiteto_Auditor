@@ -317,14 +317,14 @@ def test_muro_sem_rotulo_pega_a_cota_girada_mais_proxima():
 
 
 def test_valores_que_concordam_ficam_com_o_mais_confiavel():
-    from arquiteto_auditor.extracao.pranchas.extrator import _consolidar
+    from arquiteto_auditor.extracao.consolidar import consolidar
 
     def valor(confianca, status):
         return ValorExtraido(campo="RECUO_FRONTAL", valor=6.0, origem=OrigemValor.VETORIAL,
                              confianca=confianca, status=status, evidencias=[Evidencia(
                                  documento="p.pdf", pagina=1, trecho="6,00")])
 
-    r = _consolidar("RECUO_FRONTAL", [valor(0.6, StatusConfirmacao.PENDENTE),
+    r = consolidar([valor(0.6, StatusConfirmacao.PENDENTE),
                                       valor(0.95, StatusConfirmacao.AUTOMATICO)])
     assert r.status == StatusConfirmacao.AUTOMATICO and r.confianca == 0.95
     assert len(r.evidencias) == 2
@@ -466,3 +466,52 @@ def test_documento_alterado_depois_de_assinado(integra, cobre):
 def test_sem_nenhuma_assinatura():
     assert _constatacoes(_assinada()) == {("ASSINATURA_AUTOR", "ausente"),
                                           ("ASSINATURA_PROPRIETARIO", "ausente")}
+
+
+def test_rotulos_com_genero_entre_parenteses_e_valores_compostos():
+    v = _valores(_pagina(
+        (100, 50, "Proprietário(a): Milena Cunha Pereira"),
+        (100, 70, "Autor(a) do projeto: Elisa Martins Aragão - CAU A198048-7"),
+        (100, 90, "Matrícula: nº 71.677 do 3º Ofício de Registro de Imóveis de Serra Pacheco"),
+    ))
+    assert v["PROPRIETARIO"] == "Milena Cunha Pereira"
+    assert v["AUTOR"] == "Elisa Martins Aragão" and v["AUTOR_REGISTRO"] == "CAU A198048-7"
+    assert v["MATRICULA"] == "71.677"
+    assert v["CARTORIO"] == "3º Ofício de Registro de Imóveis de Serra Pacheco"
+
+
+def test_quadro_com_hifen_no_rotulo_e_projecao_da_edificacao():
+    v = _quadro(_pagina((100, 60, "Área construída - pavimento térreo"), (300, 60, "119,97 m²"),
+                        (100, 75, "Área construída - pavimento superior"), (300, 75, "95,98 m²"),
+                        (100, 90, "Área de projeção da edificação"), (300, 90, "119,97 m²"),
+                        (100, 105, "Número de pavimentos"), (300, 105, "2")))
+    assert v == {"AREA_CONSTR_PAV_1": 119.97, "AREA_CONSTR_PAV_2": 95.98,
+                 "AREA_PROJECAO": 119.97}
+
+
+def test_rotulos_colados_pelo_ocr():
+    v = _valores(_pagina((100, 50, "Autor(a)do projeto:Sara Melo Araújo"),
+                         (100, 70, "Matrícula:nº 73.796 do 2º Ofício de Registro de Imóveis"),
+                         (100, 90, "RRT: 10951015")))
+    assert v["AUTOR"] == "Sara Melo Araújo" and v["MATRICULA"] == "73.796"
+    assert v["RRT"] == "10951015"
+
+
+def test_rotulos_com_palavras_coladas_pelo_ocr():
+    v = _quadro(_pagina((100, 50, "Recuofrontal:5,50 m"), (100, 70, "Recuolateralesquerdo:2,00 m"),
+                        (100, 90, "Recuode fundos:9,74 m"), (100, 110, "TOTAL 3,00 m")))
+    assert v == {"RECUO_FRONTAL": 5.5, "RECUO_LATERAL_E": 2.0, "RECUO_FUNDOS": 9.74}
+
+
+def test_valor_lido_por_ocr_com_baixa_confianca_fica_pendente_na_juncao():
+    from arquiteto_auditor.config import limiar_confianca_ocr
+    from arquiteto_auditor.extracao.consolidar import consolidar
+    baixo = ValorExtraido(campo="TERRENO_AREA", valor=400.0, origem=OrigemValor.OCR,
+                          confianca=0.3, evidencias=[Evidencia(
+                              documento="m.pdf", pagina=1, trecho="400,00",
+                              confianca_ocr=limiar_confianca_ocr() - 0.1)])
+    r = consolidar([baixo])
+    assert r.status == StatusConfirmacao.PENDENTE and "OCR" in r.observacao
+    alto = baixo.model_copy(update={"evidencias": [baixo.evidencias[0].model_copy(
+        update={"confianca_ocr": 0.95})]})
+    assert consolidar([alto]).status == StatusConfirmacao.AUTOMATICO
