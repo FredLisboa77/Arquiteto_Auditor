@@ -135,3 +135,70 @@ def test_carimbo_com_celulas_altas_e_valor_no_pe_da_celula():
     v = _valores(pagina)
     assert v["PROPRIETARIO"] == "Ana Lima"
     assert "REVISAO" not in v  # o primeiro texto abaixo é outro rótulo: campo em branco
+
+
+# ---------------------------------------------------------------- quadro de áreas
+
+from arquiteto_auditor.extracao.pranchas.quadro import ler_quadro_areas  # noqa: E402
+
+
+def _quadro(pagina) -> dict:
+    return {v.campo: v.valor for v in ler_quadro_areas(pagina, "pranchas.pdf")}
+
+
+def test_quadro_em_tabela_com_valor_a_direita():
+    v = _quadro(_pagina(
+        (100, 40, "QUADRO DE ÁREAS"),
+        (100, 60, "Área do terreno"), (300, 60, "400,00 m²"),
+        (100, 75, "Área construída térreo"), (300, 75, "119,97 m²"),
+        (100, 90, "Área construída pav. superior"), (300, 90, "95,98 m²"),
+        (100, 105, "Área construída total"), (300, 105, "215,95 m²"),
+        (100, 120, "Área de projeção"), (300, 120, "119,97 m²"),
+        (100, 135, "Área permeável"), (300, 135, "112,00 m²"),
+        (100, 150, "Taxa de ocupação"), (300, 150, "29,99 %"),
+        (100, 165, "Coeficiente de aproveitamento"), (300, 165, "0,54"),
+        (100, 180, "Taxa de permeabilidade"), (300, 180, "28,00 %"),
+    ))
+    assert v == {"TERRENO_AREA": 400.0, "AREA_CONSTR_PAV_1": 119.97, "AREA_CONSTR_PAV_2": 95.98,
+                 "AREA_CONSTR_TOTAL": 215.95, "AREA_PROJECAO": 119.97, "AREA_PERMEAVEL": 112.0,
+                 "TO_DECLARADA": 29.99, "CA_DECLARADO": 0.54, "PERMEAVEL_DECLARADA": 28.0}
+
+
+def test_quadro_em_texto_corrido_com_pontilhado_e_valor_antes_do_rotulo():
+    v = _quadro(_pagina((100, 60, "Área do lote .................. 400,00 m²"),
+                        (100, 75, "119,97 m² — Área coberta térreo"),
+                        (100, 90, "0,54 — Índice de aproveitamento")))
+    assert v == {"TERRENO_AREA": 400.0, "AREA_CONSTR_PAV_1": 119.97, "CA_DECLARADO": 0.54}
+
+
+def test_quadro_em_celulas_e_indices_na_mesma_linha():
+    v = _quadro(_pagina((100, 60, "Área do terreno"), (200, 60, "Área permeável"),
+                        (100, 72, "400,00"), (200, 72, "112,00"),
+                        (100, 100, "T.O. = 29,99%   C.A. = 0,54   T.P. = 28,00%")))
+    assert v == {"TERRENO_AREA": 400.0, "AREA_PERMEAVEL": 112.0, "TO_DECLARADA": 29.99,
+                 "CA_DECLARADO": 0.54, "PERMEAVEL_DECLARADA": 28.0}
+
+
+def test_quadro_estilo_autocad_com_rotulo_quebrado_e_codigos():
+    v = _quadro(_pagina((100, 60, "ÁREA CONSTRUÍDA"), (300, 60, "A=119.97m²"),
+                        (100, 70, "TÉRREO"),
+                        (100, 85, "TAXA DE"), (300, 85, "29.99%%%"), (100, 95, "OCUPAÇÃO"),
+                        (100, 110, "COEFICIENTE DE"), (300, 110, "C=0.54"),
+                        (100, 120, "APROVEITAMENTO"),
+                        (100, 135, "ALTURA DA"), (300, 135, "H=6.50m"), (100, 145, "EDIFICAÇÃO")))
+    assert v == {"AREA_CONSTR_PAV_1": 119.97, "TO_DECLARADA": 29.99, "CA_DECLARADO": 0.54,
+                 "ALTURA": 6.5}
+
+
+def test_quadro_ignora_distracoes_e_unidade_errada():
+    v = _quadro(_pagina((100, 60, "SALA"), (100, 72, "A = 38.15m²"),  # área de ambiente
+                        (300, 60, "LOTE 6"), (300, 72, "200.16 m²"),  # lote vizinho
+                        (100, 100, "Taxa de ocupação"), (300, 100, "29,99 m²")))  # unidade errada
+    assert v == {}
+
+
+def test_quadro_ignora_titulos_e_textos_do_desenho_com_palavras_do_rotulo():
+    v = _quadro(_pagina((100, 60, "PLANTA BAIXA — PAVIMENTO SUPERIOR — ESCALA 1:100"),
+                        (100, 90, "PROJEÇÃO DA COBERTURA"), (300, 90, "12,97"),
+                        (100, 120, "ÁREA PERMEÁVEL (GRAMA)"), (100, 132, "112,00 m²")))
+    assert v == {}

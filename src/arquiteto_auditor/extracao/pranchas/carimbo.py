@@ -18,7 +18,11 @@ import unicodedata
 
 from arquiteto_auditor.dominio.documento import OrigemPalavra, PaginaLida
 from arquiteto_auditor.dominio.modelos import Evidencia, OrigemValor, ValorExtraido
-from arquiteto_auditor.extracao.pranchas.linhas import LinhaTexto, agrupar_linhas
+from arquiteto_auditor.extracao.pranchas.linhas import (
+    LinhaTexto,
+    agrupar_linhas,
+    uniao_bbox,
+)
 
 # Rótulos comuns de carimbos brasileiros, já normalizados (ver _normalizar).
 # "LOTE_QUADRA" é composto; None = rótulo conhecido que não é extraído aqui (mas delimita).
@@ -118,11 +122,6 @@ def _separar(campo: str, texto: str) -> list[tuple[str, str]]:
     return [(campo, texto)]
 
 
-def _uniao(*caixas) -> tuple[float, float, float, float]:
-    return (min(c[0] for c in caixas), min(c[1] for c in caixas),
-            max(c[2] for c in caixas), max(c[3] for c in caixas))
-
-
 def ler_carimbo(pagina: PaginaLida, arquivo: str) -> list[ValorExtraido]:
     """Valores de identificação encontrados no carimbo (e em rótulos soltos) de uma página."""
     linhas = agrupar_linhas(pagina.palavras)
@@ -147,7 +146,7 @@ def ler_carimbo(pagina: PaginaLida, arquivo: str) -> list[ValorExtraido]:
             evidencia = Evidencia(
                 documento=arquivo, pagina=pagina.numero,
                 trecho=f"{rotulo_texto} {texto}",
-                bbox=_uniao(linha.bbox, valor.bbox),
+                bbox=uniao_bbox([linha.bbox, valor.bbox]),
                 confianca_ocr=valor.confianca if ocr else None)
             valores.append(ValorExtraido(
                 campo=campo_simples, valor=texto,

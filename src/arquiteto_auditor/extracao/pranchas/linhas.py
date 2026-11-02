@@ -28,8 +28,7 @@ class LinhaTexto:
 
     @property
     def bbox(self) -> tuple[float, float, float, float]:
-        return (min(p.bbox[0] for p in self.palavras), min(p.bbox[1] for p in self.palavras),
-                max(p.bbox[2] for p in self.palavras), max(p.bbox[3] for p in self.palavras))
+        return uniao_bbox(p.bbox for p in self.palavras)
 
     @property
     def altura(self) -> float:
@@ -42,6 +41,13 @@ class LinhaTexto:
     @property
     def confianca(self) -> float:
         return min(p.confianca for p in self.palavras)
+
+
+def uniao_bbox(caixas) -> tuple[float, float, float, float]:
+    """Menor retângulo que contém todas as caixas (x0, y0, x1, y1)."""
+    caixas = list(caixas)
+    return (min(c[0] for c in caixas), min(c[1] for c in caixas),
+            max(c[2] for c in caixas), max(c[3] for c in caixas))
 
 
 def _altura(p: Palavra) -> float:

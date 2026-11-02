@@ -15,6 +15,7 @@ from collections import defaultdict
 from arquiteto_auditor.dominio.documento import DocumentoLido
 from arquiteto_auditor.dominio.modelos import StatusConfirmacao, TipoDocumento, ValorExtraido
 from arquiteto_auditor.extracao.pranchas.carimbo import ler_carimbo
+from arquiteto_auditor.extracao.pranchas.quadro import ler_quadro_areas
 
 PENALIDADE_DIVERGENCIA = 0.6  # a confiança cai quando as folhas não concordam
 
@@ -51,6 +52,7 @@ def extrair_pranchas(documentos: list[DocumentoLido]) -> dict[str, ValorExtraido
         if documento.tipo != TipoDocumento.PRANCHA:
             continue
         for pagina in documento.paginas:
-            for valor in ler_carimbo(pagina, documento.arquivo):
-                achados[valor.campo].append(valor)
+            for leitor in (ler_carimbo, ler_quadro_areas):
+                for valor in leitor(pagina, documento.arquivo):
+                    achados[valor.campo].append(valor)
     return {campo: _consolidar(campo, lista) for campo, lista in achados.items()}

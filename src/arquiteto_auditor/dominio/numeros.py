@@ -119,13 +119,24 @@ def _montar(m: re.Match, deslocamento: int = 0) -> ValorLido:
     )
 
 
+# Códigos de controle do AutoCAD (docs/06 §2). A troca mantém o tamanho do texto, para que as
+# posições (inicio/fim) continuem valendo no texto original.
+_CODIGOS_CAD = re.compile(r"%%[%cdp]", re.IGNORECASE)
+_TRADUCAO_CAD = {"%": "%  ", "c": "ø  ", "d": "°  ", "p": "±  "}
+
+
+def _traduzir_codigos_cad(texto: str) -> str:
+    return _CODIGOS_CAD.sub(lambda m: _TRADUCAO_CAD[m.group(0)[2].lower()], texto)
+
+
 def encontrar_valores(texto: str) -> list[ValorLido]:
     """Todos os valores numéricos de uma frase, com posição e unidade."""
-    return [_montar(m) for m in _PADRAO_VALOR.finditer(texto)]
+    return [_montar(m) for m in _PADRAO_VALOR.finditer(_traduzir_codigos_cad(texto))]
 
 
 def ler_valor(texto: str) -> ValorLido | None:
     """Lê um texto que deve conter exatamente UM valor; senão retorna None."""
+    texto = _traduzir_codigos_cad(texto)
     limpo = texto.strip()
     deslocamento = texto.find(limpo) if limpo else 0
     prefixo = re.match(r"[=:]\s*", limpo)

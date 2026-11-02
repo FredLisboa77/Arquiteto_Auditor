@@ -168,3 +168,12 @@ def test_ler_valor_marca_divergencia_entre_numero_e_extenso():
     lido = ler_valor("60% (cinquenta por cento)")
     assert lido.valor == 60.0
     assert lido.extenso_divergente
+
+
+def test_codigos_de_controle_do_autocad():
+    """docs/06 §2: o AutoCAD grava "%%%" no lugar de "%" (e %%c, %%d, %%p para ø, °, ±)."""
+    lido = ler_valor("56.10%%%")
+    assert lido is not None and lido.valor == 56.1 and lido.unidade == "%"
+    (achado,) = encontrar_valores("TAXA 29.99%%% (máx.)")
+    assert achado.valor == 29.99 and achado.unidade == "%"
+    assert "TAXA 29.99%%% (máx.)"[achado.inicio:achado.inicio + 5] == "29.99"  # posição mantida
