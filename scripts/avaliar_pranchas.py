@@ -1,6 +1,7 @@
 """Avalia a extração das pranchas (Fase 6) na base sintética.
 
-Uso:  .venv/Scripts/python scripts/avaliar_pranchas.py [--reservados] [--detalhes] [conjunto ...]
+Uso:  .venv/Scripts/python scripts/avaliar_pranchas.py [--reservados] [--detalhes] [--recortes]
+          [conjunto ...]
 
 Sem --reservados, usa só os conjuntos de desenvolvimento (docs/05-avaliacao.md §4). A verdade
 é o que cada prancha mostra (avaliacao/verdade_pranchas.py). Para cada campo:
@@ -9,6 +10,10 @@ Sem --reservados, usa só os conjuntos de desenvolvimento (docs/05-avaliacao.md 
 - não encontrado: a prancha mostra, mas nada foi extraído;
 - falso valor: a prancha NÃO mostra (ex.: cota omitida), mas algo foi extraído.
 Valores marcados "pendente de confirmação" contam pelo que são e aparecem à parte.
+
+Rastreabilidade: todo valor extraído precisa ter evidência com página e bbox, e o recorte da
+evidência (imagem) precisa ser gerado. Com --recortes, as imagens são gravadas em
+dados_privados/cache/recortes/<conjunto>/ para conferência visual.
 """
 
 from __future__ import annotations
@@ -27,8 +32,10 @@ from arquiteto_auditor.avaliacao.verdade_pranchas import (  # noqa: E402
     CAMPOS_IDENTIFICACAO,
     verdade_das_pranchas,
 )
+from arquiteto_auditor.config import pasta_de_dados  # noqa: E402
 from arquiteto_auditor.dominio.modelos import StatusConfirmacao  # noqa: E402
 from arquiteto_auditor.extracao.pranchas import extrair_pranchas  # noqa: E402
+from arquiteto_auditor.extracao.recorte import recortar_evidencia  # noqa: E402
 from arquiteto_auditor.ingestao.leitor import LeitorPDF  # noqa: E402
 
 PASTA = RAIZ / "dados_sinteticos" / "projetos"
@@ -54,6 +61,8 @@ def comparar(extraido, esperado) -> str:
 def main(argumentos: list[str]) -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     reservados, detalhes = "--reservados" in argumentos, "--detalhes" in argumentos
+    gravar_recortes = "--recortes" in argumentos
+    rastreio = Counter()
     nomes = [a for a in argumentos if not a.startswith("--")]
     leitor = LeitorPDF()
     por_campo: dict[str, Counter] = {campo: Counter() for campo in CAMPOS}
@@ -70,6 +79,18 @@ def main(argumentos: list[str]) -> int:
         verdade = verdade_das_pranchas(especificacao)
         documentos = [leitor.ler(pdf) for pdf in sorted(pasta.glob("prancha*.pdf"))]
         extraidos = extrair_pranchas(documentos)
+        for campo, valor in extraidos.items():
+            for indice, evidencia in enumerate(valor.evidencias):
+                rastreio["evidências"] += 1
+                if evidencia.pagina and evidencia.bbox is not None:
+                    rastreio["com página e bbox"] += 1
+                imagem = recortar_evidencia(pasta / evidencia.documento, evidencia)
+                rastreio["recortes gerados"] += bool(imagem)
+                if gravar_recortes:
+                    destino = pasta_de_dados() / "cache" / "recortes" / pasta.name
+                    destino.mkdir(parents=True, exist_ok=True)
+                    (destino / f"{campo}_{indice + 1}.png").write_bytes(imagem)
+            rastreio["valores sem evidência"] += not valor.evidencias
         for campo in CAMPOS:
             valor = extraidos.get(campo)
             resultado = comparar(valor.valor if valor else None, verdade[campo])
@@ -94,7 +115,10 @@ def main(argumentos: list[str]) -> int:
             c = por_campo[campo]
             print(f"   {campo:22s} certos {c['certo']:2d}  errados {c['errado']:2d}  "
                   f"não encontrados {c['nao encontrado']:2d}  falsos {c['falso valor']:2d}")
-    print(f"\nPendentes de confirmação: {sum(pendentes.values())} "
+    print(f"\nRastreabilidade: {rastreio['com página e bbox']}/{rastreio['evidências']} "
+          f"evidências com página e bbox; {rastreio['recortes gerados']} recortes gerados; "
+          f"{rastreio['valores sem evidência']} valores sem evidência")
+    print(f"Pendentes de confirmação: {sum(pendentes.values())} "
           f"(certos {pendentes['certo']}, errados {pendentes['errado']})")
     return 0
 
