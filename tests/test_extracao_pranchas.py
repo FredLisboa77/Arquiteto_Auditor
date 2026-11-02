@@ -1,5 +1,7 @@
 """Testes da extração das pranchas (Fase 6)."""
 
+import pytest
+
 from arquiteto_auditor.dominio.documento import DocumentoLido, PaginaLida, TipoPagina
 from arquiteto_auditor.dominio.modelos import (
     Evidencia,
@@ -326,3 +328,86 @@ def test_valores_que_concordam_ficam_com_o_mais_confiavel():
                                       valor(0.95, StatusConfirmacao.AUTOMATICO)])
     assert r.status == StatusConfirmacao.AUTOMATICO and r.confianca == 0.95
     assert len(r.evidencias) == 2
+
+
+# ---------------------------------------------------------------- completude
+
+from arquiteto_auditor.extracao.pranchas.completude import (  # noqa: E402
+    Situacao,
+    verificar_completude,
+)
+
+
+def _texto_h(cx: float, y_linha: float, texto: str) -> list[Palavra]:
+    """Número centrado acima de uma linha de cota horizontal."""
+    return _escrever(cx - 2.25 * len(texto), y_linha - 10, texto)
+
+
+def _texto_v(x_linha: float, cy: float, texto: str) -> list[Palavra]:
+    """Número girado à esquerda de uma linha de cota vertical."""
+    return _vertical(x_linha - 10, cy + 2.25 * len(texto), texto)
+
+
+def _situacao_desenhada(sem: str | None = None, norte: bool = True) -> PaginaLida:
+    cotas = {  # elemento: (segmento, texto)
+        "recuo_lateral_e": ((240, 120, 280, 120), "1.75"),
+        "meio_h": ((280, 120, 350, 120), "9.25"),
+        "recuo_lateral_d": ((350, 120, 380, 120), "1.50"),
+        "testada": ((240, 100, 380, 100), "12.50"),
+        "recuo_fundos": ((420, 150, 420, 250), "13.03"),
+        "meio_v": ((420, 250, 420, 450), "12.97"),
+        "recuo_frontal": ((420, 450, 420, 500), "6.00"),
+        "profundidade_lote": ((440, 150, 440, 500), "32.00"),
+    }
+    palavras = _escrever(280, 560, "RUA DAS ACÁCIAS") + (_escrever(150, 80, "N") if norte else [])
+    for elemento, (seg, texto) in cotas.items():
+        if elemento == sem:
+            continue
+        x0, y0, x1, y1 = seg
+        palavras += (_texto_h((x0 + x1) / 2, y0, texto) if y0 == y1
+                     else _texto_v(x0, (y0 + y1) / 2, texto))
+    return PaginaLida(numero=1, largura=2384, altura=1684, tipo=TipoPagina.VETORIAL,
+                      palavras=palavras, cotas_desenhadas=[seg for seg, _ in cotas.values()])
+
+
+def _corte(sem_altura: bool = False, sem_muro: bool = False) -> PaginaLida:
+    palavras = _escrever(100, 600, "CORTE AA") + _escrever(60, 380, "MURO")
+    if not sem_muro:
+        palavras += _texto_v(60, 470, "1.80")
+    palavras += _texto_v(300, 450, "2.80")  # pé-direito
+    if not sem_altura:
+        palavras += _texto_v(330, 400, "6.50")
+    return PaginaLida(numero=2, largura=2384, altura=1684, tipo=TipoPagina.VETORIAL,
+                      palavras=palavras,
+                      cotas_desenhadas=[(60, 440, 60, 500), (300, 400, 300, 500),
+                                        (330, 300, 330, 500)])
+
+
+def _ausentes(constatacoes) -> set:
+    return {(c.chave, c.escopo) for c in constatacoes if c.situacao == Situacao.AUSENTE}
+
+
+def test_conjunto_completo_nao_tem_nenhum_ausente():
+    documento = _prancha(_situacao_desenhada(), _corte())
+    valores = {"PROPRIETARIO": "x"}
+    assert _ausentes(verificar_completude([documento], valores)) == set()
+
+
+@pytest.mark.parametrize("elemento", ["recuo_fundos", "recuo_frontal", "recuo_lateral_e",
+                                      "recuo_lateral_d", "testada", "profundidade_lote"])
+def test_cota_so_grafica_na_situacao(elemento):
+    documento = _prancha(_situacao_desenhada(sem=elemento), _corte())
+    assert _ausentes(verificar_completude([documento], {"PROPRIETARIO": "x"})) == {
+        ("COTA_INDEFINIDA", f"elemento={elemento}")}
+
+
+def test_altura_e_muro_sem_numero_no_corte():
+    documento = _prancha(_situacao_desenhada(), _corte(sem_altura=True, sem_muro=True))
+    assert _ausentes(verificar_completude([documento], {"PROPRIETARIO": "x"})) == {
+        ("COTA_INDEFINIDA", "elemento=altura_total"), ("COTA_INDEFINIDA", "elemento=muro")}
+
+
+def test_sem_norte_e_sem_proprietario():
+    documento = _prancha(_situacao_desenhada(norte=False), _corte())
+    assert _ausentes(verificar_completude([documento], {})) == {
+        ("NORTE_INDICADO", None), ("ID_PROPRIETARIO", None)}

@@ -14,6 +14,9 @@ Valores marcados "pendente de confirmação" contam pelo que são e aparecem à 
 Rastreabilidade: todo valor extraído precisa ter evidência com página e bbox, e o recorte da
 evidência (imagem) precisa ser gerado. Com --recortes, as imagens são gravadas em
 dados_privados/cache/recortes/<conjunto>/ para conferência visual.
+
+Completude: as omissões injetadas (cota só gráfica, sem Norte, sem proprietário) precisam ser
+constatadas como "ausente", e nada pode ser dado como ausente quando está na prancha.
 """
 
 from __future__ import annotations
@@ -35,10 +38,24 @@ from arquiteto_auditor.avaliacao.verdade_pranchas import (  # noqa: E402
 from arquiteto_auditor.config import pasta_de_dados  # noqa: E402
 from arquiteto_auditor.dominio.modelos import StatusConfirmacao  # noqa: E402
 from arquiteto_auditor.extracao.pranchas import extrair_pranchas  # noqa: E402
+from arquiteto_auditor.extracao.pranchas.completude import (  # noqa: E402
+    Situacao,
+    verificar_completude,
+)
 from arquiteto_auditor.extracao.recorte import recortar_evidencia  # noqa: E402
 from arquiteto_auditor.ingestao.leitor import LeitorPDF  # noqa: E402
 
 PASTA = RAIZ / "dados_sinteticos" / "projetos"
+
+
+def omissoes_esperadas(especificacao: dict) -> set[tuple[str, str | None]]:
+    apresentacao = especificacao["apresentacao"]
+    esperadas = {("COTA_INDEFINIDA", f"elemento={e}") for e in apresentacao["cotas_omitidas"]}
+    if not apresentacao["mostrar_norte"]:
+        esperadas.add(("NORTE_INDICADO", None))
+    if not apresentacao["mostrar_proprietario"]:
+        esperadas.add(("ID_PROPRIETARIO", None))
+    return esperadas
 
 
 def _texto(valor) -> str:
@@ -63,6 +80,7 @@ def main(argumentos: list[str]) -> int:
     reservados, detalhes = "--reservados" in argumentos, "--detalhes" in argumentos
     gravar_recortes = "--recortes" in argumentos
     rastreio = Counter()
+    completude = Counter()
     nomes = [a for a in argumentos if not a.startswith("--")]
     leitor = LeitorPDF()
     por_campo: dict[str, Counter] = {campo: Counter() for campo in CAMPOS}
@@ -79,6 +97,15 @@ def main(argumentos: list[str]) -> int:
         verdade = verdade_das_pranchas(especificacao)
         documentos = [leitor.ler(pdf) for pdf in sorted(pasta.glob("prancha*.pdf"))]
         extraidos = extrair_pranchas(documentos)
+        ausentes = {(c.chave, c.escopo) for c in verificar_completude(documentos, extraidos)
+                    if c.situacao == Situacao.AUSENTE}
+        esperadas = omissoes_esperadas(especificacao)
+        completude["omissões"] += len(esperadas)
+        completude["detectadas"] += len(esperadas & ausentes)
+        completude["falsos ausentes"] += len(ausentes - esperadas)
+        for chave, escopo in sorted(esperadas ^ ausentes, key=str):
+            tipo = "não detectada" if (chave, escopo) in esperadas else "FALSO AUSENTE"
+            print(f"   {pasta.name} completude {chave} {escopo or ''}: {tipo}")
         for campo, valor in extraidos.items():
             for indice, evidencia in enumerate(valor.evidencias):
                 rastreio["evidências"] += 1
@@ -115,7 +142,9 @@ def main(argumentos: list[str]) -> int:
             c = por_campo[campo]
             print(f"   {campo:22s} certos {c['certo']:2d}  errados {c['errado']:2d}  "
                   f"não encontrados {c['nao encontrado']:2d}  falsos {c['falso valor']:2d}")
-    print(f"\nRastreabilidade: {rastreio['com página e bbox']}/{rastreio['evidências']} "
+    print(f"\nCompletude: {completude['detectadas']}/{completude['omissões']} omissões "
+          f"detectadas; {completude['falsos ausentes']} falsos \"ausente\"")
+    print(f"Rastreabilidade: {rastreio['com página e bbox']}/{rastreio['evidências']} "
           f"evidências com página e bbox; {rastreio['recortes gerados']} recortes gerados; "
           f"{rastreio['valores sem evidência']} valores sem evidência")
     print(f"Pendentes de confirmação: {sum(pendentes.values())} "

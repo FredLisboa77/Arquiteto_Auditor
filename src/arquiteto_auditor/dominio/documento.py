@@ -56,6 +56,8 @@ class PaginaLida(_Modelo):
     imagens_lidas_por_ocr: int = 0  # imagens embutidas lidas por OCR numa página vetorial
     desenhos: int = 0  # elementos de desenho vetorial (pranchas têm milhares)
     dpi_imagem: int | None = None  # resolução da imagem, quando a página é escaneada
+    # Linhas de cota desenhadas (x0, y0, x1, y1), em pontos — ingestao/geometria.py
+    cotas_desenhadas: list[tuple[float, float, float, float]] = Field(default_factory=list)
 
     @property
     def texto(self) -> str:

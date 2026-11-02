@@ -28,6 +28,7 @@ from arquiteto_auditor.dominio.documento import (
     TipoPagina,
 )
 from arquiteto_auditor.ingestao.classificador import classificar
+from arquiteto_auditor.ingestao.geometria import linhas_de_cota
 from arquiteto_auditor.ocr.cache import CacheOCR
 from arquiteto_auditor.ocr.tesseract import ler_imagem
 
@@ -125,7 +126,9 @@ class LeitorPDF:
                 lida.palavras = [self._palavra_ocr(p, bbox, 0)
                                  for p, bbox in self._ocr(pagina, hash_documento,
                                                           f"pagina_{numero}")]
-        elif self.usar_ocr:
+        else:
+            lida.cotas_desenhadas = linhas_de_cota(pagina)
+        if not escaneada and self.usar_ocr:
             grandes = [r for r, _ in imagens if r.width * r.height / area_folha
                        >= COBERTURA_IMAGEM_PARA_OCR]
             for indice, rect in enumerate(grandes):

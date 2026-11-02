@@ -109,35 +109,55 @@ def _valor(campo, linha: LinhaTexto, valor: float, pagina: PaginaLida, arquivo: 
                               confianca_ocr=linha.confianca if ocr else None)])
 
 
+# Elementos cotáveis (nomes da especificação e do escopo de COTA_INDEFINIDA) → campo extraído
+CAMPO_DO_ELEMENTO = {
+    "testada": "TERRENO_TESTADA", "profundidade_lote": "TERRENO_PROFUNDIDADE",
+    "recuo_frontal": "RECUO_FRONTAL", "recuo_fundos": "RECUO_FUNDOS",
+    "recuo_lateral_e": "RECUO_LATERAL_E", "recuo_lateral_d": "RECUO_LATERAL_D",
+    "altura_total": "ALTURA", "muro": "MURO_ALTURA",
+}
+
+
+def rua_mais_proxima(linhas: list[LinhaTexto], regiao) -> LinhaTexto | None:
+    """Texto com nome de rua mais perto da região (até RAIO_RUA × o tamanho dela)."""
+    tamanho = max(regiao[2] - regiao[0], regiao[3] - regiao[1])
+    ruas = [ln for ln in linhas if not ln.vertical and _RUA.search(_normalizar(ln.texto))
+            and _distancia(ln.bbox, regiao) <= RAIO_RUA * tamanho]
+    return min(ruas, key=lambda ln: _distancia(ln.bbox, regiao)) if ruas else None
+
+
+def elementos_da_cadeia(vertical: bool, rua_embaixo: bool) -> tuple[str, str, str]:
+    """(elemento da 1ª parte, da 3ª parte, do total), com as partes em ordem na folha.
+
+    Ordem na folha: da esquerda para a direita (horizontal) ou de cima para baixo (vertical;
+    o y cresce para baixo). Olhando da rua para o lote, a esquerda de quem olha é a lateral
+    esquerda; a parte do lado da rua é o recuo frontal.
+    """
+    if vertical:
+        return ("recuo_fundos", "recuo_frontal", "profundidade_lote") if rua_embaixo else (
+            "recuo_frontal", "recuo_fundos", "profundidade_lote")
+    return ("recuo_lateral_e", "recuo_lateral_d", "testada") if rua_embaixo else (
+        "recuo_lateral_d", "recuo_lateral_e", "testada")
+
+
 def _ler_cadeias(linhas, cotas, pagina, arquivo) -> list[ValorExtraido]:
     horizontais, verticais = _cadeias(cotas, False), _cadeias(cotas, True)
     if not horizontais and not verticais:
         return []
     regiao = uniao_bbox([x[0].bbox for partes, total in horizontais + verticais
                          for x in (*partes, total)])
-    tamanho = max(regiao[2] - regiao[0], regiao[3] - regiao[1])
-    ruas = [ln for ln in linhas if not ln.vertical and _RUA.search(_normalizar(ln.texto))
-            and _distancia(ln.bbox, regiao) <= RAIO_RUA * tamanho]
-    if not ruas:
+    rua = rua_mais_proxima(linhas, regiao)
+    if rua is None:
         return []
-    rua = min(ruas, key=lambda ln: _distancia(ln.bbox, regiao))
 
     valores = []
-    for (a, _, c), total in horizontais[:1]:
-        rua_embaixo = rua.centro_y > _atravessado(a[0])
-        esquerda, direita = (a, c) if rua_embaixo else (c, a)
-        for campo, (linha, valor) in (("RECUO_LATERAL_E", esquerda),
-                                      ("RECUO_LATERAL_D", direita),
-                                      ("TERRENO_TESTADA", total)):
-            valores.append(_valor(campo, linha, valor, pagina, arquivo, CONFIANCA_CADEIA,
-                                  OBSERVACAO_CADEIA))
-    for (a, b, c), total in verticais[:1]:
-        rua_embaixo = rua.centro_y > _ao_longo(b[0])
-        frente, fundos = (c, a) if rua_embaixo else (a, c)  # y cresce para baixo na folha
-        for campo, (linha, valor) in (("RECUO_FRONTAL", frente), ("RECUO_FUNDOS", fundos),
-                                      ("TERRENO_PROFUNDIDADE", total)):
-            valores.append(_valor(campo, linha, valor, pagina, arquivo, CONFIANCA_CADEIA,
-                                  OBSERVACAO_CADEIA))
+    for vertical, cadeias in ((False, horizontais), (True, verticais)):
+        for (a, b, c), total in cadeias[:1]:
+            rua_embaixo = rua.centro_y > (_ao_longo(b[0]) if vertical else _atravessado(a[0]))
+            for elemento, (linha, valor) in zip(elementos_da_cadeia(vertical, rua_embaixo),
+                                                (a, c, total), strict=True):
+                valores.append(_valor(CAMPO_DO_ELEMENTO[elemento], linha, valor, pagina,
+                                      arquivo, CONFIANCA_CADEIA, OBSERVACAO_CADEIA))
     return valores
 
 

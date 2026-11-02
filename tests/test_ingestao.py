@@ -144,3 +144,37 @@ def test_prancha_sem_texto_e_reconhecida_pelo_formato_e_desenho():
 def test_sem_pistas_o_tipo_fica_outro():
     resultado = classificar(_documento("texto qualquer sem pistas"))
     assert resultado.tipo == TipoDocumento.OUTRO and resultado.confianca == 0
+
+
+# ---------------------------------------------------------------- linhas de cota desenhadas
+
+from arquiteto_auditor.ingestao.geometria import linhas_de_cota  # noqa: E402
+
+
+def _cota(pagina, x0, y0, x1, y1, tracinho=4.0):
+    """Linha de cota com um tracinho a 45° em cada ponta (estilo arquitetônico)."""
+    pagina.draw_line((x0, y0), (x1, y1))
+    for x, y in ((x0, y0), (x1, y1)):
+        pagina.draw_line((x - tracinho, y + tracinho), (x + tracinho, y - tracinho))
+
+
+def test_linhas_de_cota_sao_segmentos_com_tracinhos_nas_duas_pontas(tmp_path):
+    documento = pymupdf.open()
+    pagina = documento.new_page(width=842, height=595)
+    _cota(pagina, 100, 100, 300, 100)  # horizontal
+    _cota(pagina, 400, 100, 400, 250)  # vertical
+    pagina.draw_line((100, 400), (300, 400))  # linha comum: não é cota
+    pagina.draw_line((500, 400), (510, 390))  # tracinho solto
+    pagina.draw_rect(pymupdf.Rect(600, 300, 700, 380))  # retângulo: não é cota
+    cotas = sorted(linhas_de_cota(pagina))
+    assert cotas == [(100.0, 100.0, 300.0, 100.0), (400.0, 100.0, 400.0, 250.0)]
+
+
+def test_pagina_vetorial_guarda_as_linhas_de_cota(leitor, tmp_path):
+    caminho = tmp_path / "prancha.pdf"
+    documento = pymupdf.open()
+    pagina = documento.new_page(width=842, height=595)
+    pagina.insert_text((100, 90), "RECUO FRONTAL 5,00", fontsize=9)
+    _cota(pagina, 100, 100, 300, 100)
+    documento.save(caminho)
+    assert leitor.ler(caminho).paginas[0].cotas_desenhadas == [(100.0, 100.0, 300.0, 100.0)]
