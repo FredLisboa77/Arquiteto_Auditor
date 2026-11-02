@@ -38,7 +38,7 @@ def normalizar(texto: str) -> str:
 
 
 @dataclass(frozen=True)
-class _Linha:
+class LinhaCorrida:
     inicio: int  # posição no texto corrido
     fim: int
     pagina: int
@@ -49,7 +49,7 @@ class _Linha:
 class TextoCorrido:
     def __init__(self, documento: DocumentoLido):
         partes: list[str] = []
-        self._linhas: list[_Linha] = []
+        self._linhas: list[LinhaCorrida] = []
         posicao = 0
         for pagina in documento.paginas:
             grupos: dict[tuple[int, int], list[Palavra]] = {}
@@ -67,13 +67,18 @@ class TextoCorrido:
                 for p in palavras:
                     posicoes.append((cursor, cursor + len(p.texto)))
                     cursor += len(p.texto) + 1
-                self._linhas.append(_Linha(posicao, posicao + len(texto), pagina.numero,
+                self._linhas.append(LinhaCorrida(posicao, posicao + len(texto), pagina.numero,
                                            tuple(palavras), tuple(posicoes)))
                 partes.append(texto)
                 posicao += len(texto)
         self.texto = "\n".join(partes)
 
-    def _linhas_do_trecho(self, inicio: int, fim: int) -> list[_Linha]:
+    @property
+    def linhas(self) -> tuple[LinhaCorrida, ...]:
+        """As linhas na ordem do texto, com página e palavras."""
+        return tuple(self._linhas)
+
+    def _linhas_do_trecho(self, inicio: int, fim: int) -> list[LinhaCorrida]:
         return [ln for ln in self._linhas if ln.inicio < fim and ln.fim > inicio]
 
     def confianca(self, inicio: int, fim: int) -> float | None:
