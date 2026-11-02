@@ -88,3 +88,20 @@ def config_llm() -> ConfigLLM:
 def exigir_endereco_local(endereco: str) -> None:
     if urlparse(endereco).hostname not in ENDERECOS_LOCAIS:
         raise ValueError(f"o LLM precisa rodar nesta máquina (127.0.0.1); recebido: {endereco}")
+
+
+@dataclass(frozen=True)
+class Tolerancias:
+    """Diferenças aceitas nas comparações do motor de verificação (config: [tolerancias])."""
+
+    area_m2: float = 0.01
+    comprimento_m: float = 0.01
+    percentual: float = 0.005
+    coeficiente: float = 0.005
+
+
+def tolerancias() -> Tolerancias:
+    lidas = carregar_config().get("tolerancias", {})
+    padrao = Tolerancias()
+    return Tolerancias(**{campo: float(lidas.get(campo, getattr(padrao, campo)))
+                          for campo in padrao.__dataclass_fields__})

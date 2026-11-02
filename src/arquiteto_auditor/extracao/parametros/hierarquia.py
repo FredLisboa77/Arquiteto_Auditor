@@ -14,27 +14,11 @@ verificação mostra "não foi possível verificar").
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
-from typing import Literal
 
 from arquiteto_auditor.dominio.modelos import StatusConfirmacao, ValorExtraido
+from arquiteto_auditor.dominio.parametros import ParametroAdotado
 from arquiteto_auditor.extracao.parametros.definicoes import POR_CHAVE
 from arquiteto_auditor.extracao.parametros.extrator import ParametrosDoDocumento
-
-
-@dataclass(frozen=True)
-class ParametroAdotado:
-    chave: str
-    valor: ValorExtraido  # o valor que vale, com a evidência do documento de onde veio
-    fonte: Literal["prefeitura", "condominio"]
-    valor_condominio: ValorExtraido | None = None  # quando a prefeitura também define
-    observacao: str | None = None
-
-    @property
-    def conflito(self) -> bool:
-        return (self.fonte == "prefeitura" and self.valor_condominio is not None
-                and not math.isclose(float(self.valor.valor),
-                                     float(self.valor_condominio.valor), abs_tol=1e-6))
 
 
 def _numero(valor: float | str) -> str:

@@ -246,3 +246,30 @@ def _ler_valor_so_por_extenso(texto: str, deslocamento: int) -> ValorLido | None
             fim=deslocamento + len(texto),
         )
     return None
+
+
+# ---------------------------------------------------------------- formatação (saída)
+
+
+def formatar_numero(valor: float, casas: int = 2) -> str:
+    """Número no formato brasileiro: 1234.5 → "1.234,50" (nunca "-0,00")."""
+    if round(valor, casas) == 0:
+        valor = 0.0
+    texto = f"{valor:,.{casas}f}"
+    return texto.replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def casas_decimais(texto: str, valor: float) -> int | None:
+    """Quantas casas decimais o número `valor` tem como está escrito no texto (None se não está)."""
+    for lido in encontrar_valores(texto):
+        if abs(lido.valor - valor) < 1e-9 and "cm" not in lido.texto.lower():
+            numero = re.match(r"[\d.,]+", lido.texto)
+            if numero is None:
+                return None
+            escrito = numero.group(0).rstrip(".,")
+            if "," in escrito:
+                return len(escrito.rsplit(",", 1)[1])
+            if re.fullmatch(r"\d+\.\d{1,2}", escrito):  # ponto decimal do CAD: 5.00
+                return len(escrito.rsplit(".", 1)[1])
+            return 0
+    return None

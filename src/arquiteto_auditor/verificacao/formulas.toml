@@ -1,0 +1,28 @@
+# Fórmulas PADRÃO dos índices urbanísticos (docs/03 §5.5).
+#
+# Usadas quando a lei não define a fórmula. O relatório sempre diz qual fórmula foi usada.
+# numerador: campo do projeto (quadro de áreas da prancha); o denominador é sempre a área
+# do terreno ADOTADA (estado atual da matrícula; na falta, escritura, prancha, memorial).
+# fator: 100 para índices em porcentagem.
+# exclusoes: o que a fórmula padrão NÃO desconta (o revisor confere se a lei permite).
+
+[TO]
+nome = "taxa de ocupação"
+numerador = "AREA_PROJECAO"
+fator = 100
+descricao = "TO = área de projeção da edificação ÷ área do terreno × 100"
+exclusoes = "beirais, marquises e pergolados não são descontados da projeção"
+
+[CA]
+nome = "coeficiente de aproveitamento"
+numerador = "AREA_CONSTR_TOTAL"
+fator = 1
+descricao = "CA = área construída total ÷ área do terreno"
+exclusoes = "nenhuma área não computável é descontada (garagem, áreas técnicas etc.)"
+
+[PERMEAVEL]
+nome = "taxa de permeabilidade"
+numerador = "AREA_PERMEAVEL"
+fator = 100
+descricao = "TP = área permeável ÷ área do terreno × 100"
+exclusoes = "pisos semipermeáveis contam como a prancha declarar"

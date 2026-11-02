@@ -23,3 +23,12 @@ modelo = "qwen2.5:7b-instruct-q4_K_M"
 temperatura = 0
 # Segundos de espera por resposta (a primeira chamada carrega o modelo na placa de vídeo).
 tempo_limite = 300
+
+[tolerancias]
+# Diferença aceita ao comparar o MESMO dado em documentos diferentes (arredondamento).
+area_m2 = 0.01
+comprimento_m = 0.01
+# Índice declarado × recalculado: aceita o arredondamento da última casa decimal declarada
+# (ex.: "35,23%" vale para 35,2251%), e nunca menos que estes valores.
+percentual = 0.005
+coeficiente = 0.005
