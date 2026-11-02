@@ -10,6 +10,7 @@ import tomllib
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
+from urllib.parse import urlparse
 
 RAIZ = Path(__file__).resolve().parents[2]
 
@@ -57,3 +58,33 @@ def limiar_confianca_ocr() -> float:
 def pasta_de_dados() -> Path:
     """Onde ficam histórico, relatórios e cache (dados pessoais: nunca vão para o Git)."""
     return caminho_do_projeto(carregar_config().get("pastas", {}).get("dados", "dados_privados"))
+
+
+ENDERECOS_LOCAIS = ("127.0.0.1", "localhost", "::1")
+
+
+@dataclass(frozen=True)
+class ConfigLLM:
+    endereco: str = "http://127.0.0.1:11434"
+    modelo: str = "qwen2.5:7b-instruct-q4_K_M"
+    temperatura: float = 0.0
+    tempo_limite: float = 300.0  # segundos; a primeira chamada carrega o modelo (~2 min)
+
+
+def config_llm() -> ConfigLLM:
+    """Configuração do LLM. Só aceita servidor nesta máquina: nada de documento sai dela."""
+    llm = carregar_config().get("llm", {})
+    padrao = ConfigLLM()
+    config = ConfigLLM(
+        endereco=str(llm.get("endereco", padrao.endereco)).rstrip("/"),
+        modelo=str(llm.get("modelo", padrao.modelo)),
+        temperatura=float(llm.get("temperatura", padrao.temperatura)),
+        tempo_limite=float(llm.get("tempo_limite", padrao.tempo_limite)),
+    )
+    exigir_endereco_local(config.endereco)
+    return config
+
+
+def exigir_endereco_local(endereco: str) -> None:
+    if urlparse(endereco).hostname not in ENDERECOS_LOCAIS:
+        raise ValueError(f"o LLM precisa rodar nesta máquina (127.0.0.1); recebido: {endereco}")

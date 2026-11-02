@@ -1,0 +1,5 @@
+Parâmetro: <<PARAMETRO>>
+Zona: <<ZONA>>
+
+Trechos:
+<<TRECHOS>>

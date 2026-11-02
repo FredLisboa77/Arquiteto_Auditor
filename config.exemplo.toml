@@ -17,6 +17,9 @@ idioma = "por"
 limiar_confianca = 0.6
 
 [llm]
+# Só endereços desta máquina são aceitos (privacidade: nenhum documento sai do computador).
 endereco = "http://127.0.0.1:11434"
 modelo = "qwen2.5:7b-instruct-q4_K_M"
 temperatura = 0
+# Segundos de espera por resposta (a primeira chamada carrega o modelo na placa de vídeo).
+tempo_limite = 300
