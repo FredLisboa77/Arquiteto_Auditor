@@ -2,7 +2,8 @@
 
 Cada parte (carimbo, quadro de áreas, cotas...) devolve os valores que achou em cada folha.
 O mesmo campo costuma aparecer em várias folhas (o carimbo se repete):
-- todas concordam → um valor só, com a evidência de cada folha;
+- todas concordam → um valor só, com a evidência de cada folha e a confiança (e o status) do
+  achado mais confiável: uma cota com rótulo confirma a mesma cota achada pela cadeia;
 - discordam → fica o valor mais frequente, marcado "pendente de confirmação", com os outros
   valores na observação (o revisor decide; nunca se escolhe em silêncio — CLAUDE.md §3).
 Campo que nenhuma parte achou fica fora do resultado: quem usa trata como "não encontrado".
@@ -15,6 +16,7 @@ from collections import defaultdict
 from arquiteto_auditor.dominio.documento import DocumentoLido
 from arquiteto_auditor.dominio.modelos import StatusConfirmacao, TipoDocumento, ValorExtraido
 from arquiteto_auditor.extracao.pranchas.carimbo import ler_carimbo
+from arquiteto_auditor.extracao.pranchas.cotas import ler_cotas_sem_rotulo
 from arquiteto_auditor.extracao.pranchas.quadro import ler_quadro_areas
 
 PENALIDADE_DIVERGENCIA = 0.6  # a confiança cai quando as folhas não concordam
@@ -31,14 +33,14 @@ def _consolidar(campo: str, achados: list[ValorExtraido]) -> ValorExtraido:
     ordem = sorted(grupos.values(), key=len, reverse=True)  # empate: o que apareceu antes
     escolhidos = ordem[0]
     evidencias = [e for a in escolhidos for e in a.evidencias]
-    confianca = min(a.confianca for a in escolhidos)
+    base = max(escolhidos, key=lambda a: a.confianca)
+    confianca = base.confianca
     if len(ordem) == 1:
-        return escolhidos[0].model_copy(update={"evidencias": evidencias,
-                                                "confianca": confianca})
+        return base.model_copy(update={"evidencias": evidencias})
     outros = "; ".join(
         f"{grupo[0].valor} (pág. {', '.join(str(e.pagina) for a in grupo for e in a.evidencias)})"
         for grupo in ordem[1:])
-    return escolhidos[0].model_copy(update={
+    return base.model_copy(update={
         "evidencias": evidencias,
         "confianca": round(confianca * PENALIDADE_DIVERGENCIA, 3),
         "status": StatusConfirmacao.PENDENTE,
@@ -52,7 +54,7 @@ def extrair_pranchas(documentos: list[DocumentoLido]) -> dict[str, ValorExtraido
         if documento.tipo != TipoDocumento.PRANCHA:
             continue
         for pagina in documento.paginas:
-            for leitor in (ler_carimbo, ler_quadro_areas):
+            for leitor in (ler_carimbo, ler_quadro_areas, ler_cotas_sem_rotulo):
                 for valor in leitor(pagina, documento.arquivo):
                     achados[valor.campo].append(valor)
     return {campo: _consolidar(campo, lista) for campo, lista in achados.items()}

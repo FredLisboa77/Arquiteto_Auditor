@@ -1,7 +1,13 @@
 """Testes da extração das pranchas (Fase 6)."""
 
 from arquiteto_auditor.dominio.documento import DocumentoLido, PaginaLida, TipoPagina
-from arquiteto_auditor.dominio.modelos import StatusConfirmacao, TipoDocumento
+from arquiteto_auditor.dominio.modelos import (
+    Evidencia,
+    OrigemValor,
+    StatusConfirmacao,
+    TipoDocumento,
+    ValorExtraido,
+)
 from arquiteto_auditor.extracao.pranchas import extrair_pranchas
 
 
@@ -202,3 +208,121 @@ def test_quadro_ignora_titulos_e_textos_do_desenho_com_palavras_do_rotulo():
                         (100, 90, "PROJEÇÃO DA COBERTURA"), (300, 90, "12,97"),
                         (100, 120, "ÁREA PERMEÁVEL (GRAMA)"), (100, 132, "112,00 m²")))
     assert v == {}
+
+
+# ---------------------------------------------------------------- texto girado e cotas
+
+
+def _vertical(x: float, y_base: float, texto: str) -> list[Palavra]:
+    """Texto girado 90° (lido de baixo para cima): cada palavra fica "em pé"."""
+    palavras, y = [], y_base
+    for token in texto.split():
+        comprimento = 4.5 * len(token)
+        palavras.append(Palavra(texto=token, bbox=(x, y - comprimento, x + ALTURA, y),
+                                confianca=1.0, origem=OrigemPalavra.VETORIAL))
+        y -= comprimento + 2.5
+    return palavras
+
+
+def test_agrupar_linhas_le_texto_girado_de_baixo_para_cima():
+    palavras = _vertical(500, 400, "RECUO FRONTAL 6,00") + _escrever(100, 50, "18")
+    linhas = agrupar_linhas(palavras)
+    assert sorted(ln.texto for ln in linhas) == ["18", "RECUO FRONTAL 6,00"]
+    girada = next(ln for ln in linhas if ln.vertical)
+    assert girada.altura == ALTURA  # altura da letra = largura da palavra em pé
+
+
+def test_cotas_com_rotulo_deitadas_giradas_e_notacao_cad():
+    palavras = (_escrever(100, 50, "LATERAL ESQ. 1,75") + _escrever(300, 50, "TESTADA 12.50")
+                + _vertical(500, 400, "RECUO FRONTAL 6,00")
+                + _escrever(100, 200, "MURO H=1.80m"))
+    pagina = PaginaLida(numero=1, largura=2384, altura=1684, tipo=TipoPagina.VETORIAL,
+                        palavras=palavras)
+    assert _quadro(pagina) == {"RECUO_LATERAL_E": 1.75, "TERRENO_TESTADA": 12.5,
+                               "RECUO_FRONTAL": 6.0, "MURO_ALTURA": 1.8}
+
+
+def test_rotulo_de_cota_solto_nao_puxa_numero_vizinho():
+    assert _quadro(_pagina((100, 50, "MURO"), (100, 62, "1,80"), (100, 90, "TESTADA"),
+                           (200, 90, "12,50"))) == {}
+
+
+def test_palavra_curta_no_meio_do_texto_girado():
+    # "DE" em pé é quase quadrado: só pela forma não dá para saber que está girado
+    palavras = [Palavra(texto=t, bbox=(500, y0, 508, y1), confianca=1.0,
+                        origem=OrigemPalavra.VETORIAL)
+                for t, y0, y1 in (("RECUO", 370, 400), ("DE", 357, 367), ("FUNDOS", 318, 354),
+                                  ("13,03", 290, 315))]
+    (linha,) = agrupar_linhas(palavras)
+    assert linha.vertical and linha.texto == "RECUO DE FUNDOS 13,03"
+
+
+# ---------------------------------------------------------------- cotas sem rótulo
+
+from arquiteto_auditor.extracao.pranchas.cotas import ler_cotas_sem_rotulo  # noqa: E402
+
+
+def _situacao(rua_y: float, com_fundos: bool = True) -> PaginaLida:
+    """Lote de 12,50 × 32,00 desenhado com cadeias de cotas (sem rótulo) e a rua."""
+    palavras = (_escrever(300, 100, "12.50")  # total horizontal (testada)
+                + _escrever(240, 115, "1.75") + _escrever(300, 115, "9.25")
+                + _escrever(370, 115, "1.50")  # cadeia horizontal (esq → dir na folha)
+                + _vertical(420, 480, "6.00") + _vertical(420, 330, "12.97")  # cadeia vertical
+                + _vertical(440, 330, "32.00")  # total vertical (profundidade)
+                + _escrever(280, rua_y, "RUA DAS ACÁCIAS"))
+    if com_fundos:
+        palavras += _vertical(420, 170, "13.03")
+    return PaginaLida(numero=1, largura=2384, altura=1684, tipo=TipoPagina.VETORIAL,
+                      palavras=palavras)
+
+
+def _cotas(pagina) -> dict:
+    return {v.campo: v.valor for v in ler_cotas_sem_rotulo(pagina, "pranchas.pdf")}
+
+
+def test_cadeias_de_cotas_com_a_rua_embaixo():
+    valores = ler_cotas_sem_rotulo(_situacao(rua_y=560), "pranchas.pdf")
+    assert {v.campo: v.valor for v in valores} == {
+        "RECUO_LATERAL_E": 1.75, "RECUO_LATERAL_D": 1.5, "TERRENO_TESTADA": 12.5,
+        "RECUO_FRONTAL": 6.0, "RECUO_FUNDOS": 13.03, "TERRENO_PROFUNDIDADE": 32.0}
+    assert all(v.status == StatusConfirmacao.PENDENTE for v in valores)  # sempre confirmar
+
+
+def test_cadeias_de_cotas_com_a_rua_em_cima_invertem_frente_e_lados():
+    v = _cotas(_situacao(rua_y=40))
+    assert v["RECUO_FRONTAL"] == 13.03 and v["RECUO_FUNDOS"] == 6.0
+    assert v["RECUO_LATERAL_E"] == 1.5 and v["RECUO_LATERAL_D"] == 1.75
+
+
+def test_cadeia_incompleta_ou_sem_rua_nao_afirma_nada():
+    v = _cotas(_situacao(rua_y=560, com_fundos=False))
+    assert "RECUO_FRONTAL" not in v and "RECUO_FUNDOS" not in v
+    assert v["RECUO_LATERAL_E"] == 1.75  # a cadeia horizontal está completa
+    sem_rua = _situacao(rua_y=560)
+    sem_rua = sem_rua.model_copy(update={"palavras": [
+        p for p in sem_rua.palavras if p.texto not in ("RUA", "DAS", "ACÁCIAS")]})
+    assert _cotas(sem_rua) == {}
+
+
+def test_muro_sem_rotulo_pega_a_cota_girada_mais_proxima():
+    palavras = (_escrever(100, 300, "MURO") + _vertical(90, 360, "1.80")
+                + _vertical(400, 380, "2.80"))  # pé-direito, longe
+    pagina = PaginaLida(numero=1, largura=2384, altura=1684, tipo=TipoPagina.VETORIAL,
+                        palavras=palavras)
+    (valor,) = ler_cotas_sem_rotulo(pagina, "pranchas.pdf")
+    assert valor.campo == "MURO_ALTURA" and valor.valor == 1.8
+    assert valor.status == StatusConfirmacao.PENDENTE
+
+
+def test_valores_que_concordam_ficam_com_o_mais_confiavel():
+    from arquiteto_auditor.extracao.pranchas.extrator import _consolidar
+
+    def valor(confianca, status):
+        return ValorExtraido(campo="RECUO_FRONTAL", valor=6.0, origem=OrigemValor.VETORIAL,
+                             confianca=confianca, status=status, evidencias=[Evidencia(
+                                 documento="p.pdf", pagina=1, trecho="6,00")])
+
+    r = _consolidar("RECUO_FRONTAL", [valor(0.6, StatusConfirmacao.PENDENTE),
+                                      valor(0.95, StatusConfirmacao.AUTOMATICO)])
+    assert r.status == StatusConfirmacao.AUTOMATICO and r.confianca == 0.95
+    assert len(r.evidencias) == 2

@@ -1,4 +1,4 @@
-"""Leitura do quadro de áreas das pranchas (sem LLM).
+"""Leitura do quadro de áreas e das cotas com rótulo das pranchas (sem LLM).
 
 Os quadros reais e sintéticos variam muito (docs/06 §1 e §2): tabela, texto com pontilhado,
 células com o rótulo em cima, valor antes do rótulo, vários índices numa linha só
@@ -9,6 +9,10 @@ texto e, para cada um, o valor:
 2. senão, numa linha vizinha que seja SÓ um valor: à direita, à esquerda ou logo abaixo.
 A unidade precisa combinar com o campo (área em m², taxa em %, altura em m): "29,99 m²" ao
 lado de "Taxa de ocupação" é descartado. Números são lidos só pelo normalizador único.
+
+Cotas com rótulo ("RECUO FRONTAL 6,00", "MURO H=1.80m", inclusive giradas 90°) usam a mesma
+leitura, mas só aceitam o valor na MESMA linha: um rótulo de cota solto (ex.: "MURO" escrito
+sobre o desenho) não puxa um número vizinho qualquer.
 """
 
 from __future__ import annotations
@@ -45,12 +49,30 @@ ROTULOS_QUADRO: dict[str, tuple[tuple[str, ...], set, str | None]] = {
                             *_TAXA),
     "ALTURA": (("ALTURA DA EDIFICACAO", "ALTURA TOTAL", "ALTURA DA CONSTRUCAO"), {"m", None},
                "m"),
+    # cotas com rótulo (só valor na mesma linha — ver SO_NA_MESMA_LINHA)
+    "TERRENO_TESTADA": (("TESTADA", "TESTADA DO LOTE", "FRENTE DO LOTE"), {"m", None}, "m"),
+    "TERRENO_PROFUNDIDADE": (("PROFUNDIDADE", "PROFUNDIDADE DO LOTE"), {"m", None}, "m"),
+    "RECUO_FRONTAL": (("RECUO FRONTAL", "RECUO DE FRENTE", "AFASTAMENTO FRONTAL"), {"m", None},
+                      "m"),
+    "RECUO_FUNDOS": (("RECUO DE FUNDOS", "RECUO FUNDOS", "AFASTAMENTO DE FUNDOS"), {"m", None},
+                     "m"),
+    "RECUO_LATERAL_E": (("LATERAL ESQ", "LATERAL ESQUERDA", "LATERAL ESQUERDO",
+                         "RECUO LATERAL ESQ", "RECUO LATERAL ESQUERDO",
+                         "AFASTAMENTO LATERAL ESQUERDO"), {"m", None}, "m"),
+    "RECUO_LATERAL_D": (("LATERAL DIR", "LATERAL DIREITA", "LATERAL DIREITO",
+                         "RECUO LATERAL DIR", "RECUO LATERAL DIREITO",
+                         "AFASTAMENTO LATERAL DIREITO"), {"m", None}, "m"),
+    "MURO_ALTURA": (("MURO", "MURO DE DIVISA", "MURO FRONTAL", "MURO DE FECHAMENTO",
+                     "ALTURA DO MURO"), {"m", None}, "m"),
 }
+SO_NA_MESMA_LINHA = {"TERRENO_TESTADA", "TERRENO_PROFUNDIDADE", "RECUO_FRONTAL", "RECUO_FUNDOS",
+                     "RECUO_LATERAL_E", "RECUO_LATERAL_D", "MURO_ALTURA"}
 _PADROES = [
     (campo, re.compile(r"(?<![A-Z0-9])" + r"\s+".join(rotulo.split()) + r"(?![A-Z0-9])"))
     for campo, (rotulos, _, _) in ROTULOS_QUADRO.items() for rotulo in rotulos
 ]
 _PREFIXO_CAD = re.compile(r"^\s*[A-Za-z]\s*=\s*")  # "A=", "C=", "H=" (docs/06 §2)
+_PREFIXO_CAD_NO_MEIO = re.compile(r"(?<![^\W\d_])[A-Za-z]\s*=")  # "MURO H=1.80m"
 CONFIANCA = {"mesma linha": 0.9, "direita": 0.9, "esquerda": 0.85, "abaixo": 0.85}
 
 
@@ -89,7 +111,7 @@ def _linha_de_quadro(texto: str, rotulos: list[_Rotulo]) -> bool:
     Sobrou outra palavra → é título ou texto do desenho que contém palavras de um rótulo
     ("PLANTA BAIXA — PAVIMENTO SUPERIOR — ESCALA 1:100", "ÁREA PERMEÁVEL (GRAMA)").
     """
-    resto = list(texto)
+    resto = list(_PREFIXO_CAD_NO_MEIO.sub(lambda m: " " * len(m.group(0)), texto))
     for inicio, fim in [(r.inicio, r.fim) for r in rotulos] + [
             (v.inicio, v.fim) for v in encontrar_valores(texto)]:
         resto[inicio:fim] = " " * (fim - inicio)
@@ -125,6 +147,7 @@ def _valores_na_linha(texto: str, rotulos: list[_Rotulo]) -> dict[int, ValorLido
 def _vizinho(linha: LinhaTexto, linhas: list[LinhaTexto]) -> tuple[LinhaTexto, str] | None:
     """Linha vizinha que seja só um valor: à direita, à esquerda ou logo abaixo."""
     altura = linha.altura
+    linhas = [ln for ln in linhas if not ln.vertical]  # direita/abaixo só no texto deitado
     mesma_fileira = [ln for ln in linhas if ln is not linha and
                      abs(ln.centro_y - linha.centro_y) <= 0.6 * max(altura, ln.altura)]
     direita = [ln for ln in mesma_fileira if ln.bbox[0] > linha.bbox[2]]
@@ -171,7 +194,8 @@ def ler_quadro_areas(pagina: PaginaLida, arquivo: str) -> list[ValorExtraido]:
         na_linha = _valores_na_linha(linha.texto, rotulos)
         for i, rotulo in enumerate(rotulos):
             fonte, como, valor = linha, "mesma linha", na_linha.get(i)
-            if valor is None and len(rotulos) == 1 and not encontrar_valores(linha.texto):
+            if (valor is None and len(rotulos) == 1 and not encontrar_valores(linha.texto)
+                    and rotulo.campo not in SO_NA_MESMA_LINHA and not linha.vertical):
                 vizinho = _vizinho(linha, linhas)
                 if vizinho is not None:
                     fonte, como = vizinho

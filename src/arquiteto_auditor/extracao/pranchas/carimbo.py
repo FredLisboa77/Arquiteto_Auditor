@@ -83,6 +83,9 @@ def _rotulo(linha: LinhaTexto) -> tuple[str | None, int] | None:
 
 def _valor_associado(rotulo: LinhaTexto, linhas: list[LinhaTexto],
                      sao_rotulos: set[int]) -> tuple[LinhaTexto, str] | None:
+    if rotulo.vertical:
+        return None
+    linhas = [ln for ln in linhas if not ln.vertical]  # direita/abaixo só no texto deitado
     altura = rotulo.altura
     direita = [ln for ln in linhas
                if abs(ln.centro_y - rotulo.centro_y) <= 0.6 * max(altura, ln.altura)
