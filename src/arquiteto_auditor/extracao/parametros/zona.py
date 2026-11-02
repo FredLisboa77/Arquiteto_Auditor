@@ -42,7 +42,7 @@ def _padrao(nome: str) -> re.Pattern:
     return re.compile(r"\b" + r"\s+".join(re.escape(p) for p in nome.split()) + r"\b")
 
 
-def _ultimo_codigo(texto: str) -> re.Match | None:
+def ultimo_codigo(texto: str) -> re.Match | None:
     codigos = [m for m in _CODIGO.finditer(texto) if m.group(1) not in _NAO_CODIGOS]
     return codigos[-1] if codigos else None
 
@@ -66,7 +66,7 @@ def _mencoes(trechos: list[Trecho], corrido: TextoCorrido, padrao: re.Pattern,
         original = corrido.texto[trecho.inicio:trecho.fim]
         normal = normalizar(original)  # mesmo tamanho: as posições valem nos dois
         for mencao in padrao.finditer(normal):
-            codigo = _ultimo_codigo(original[:mencao.start()])
+            codigo = ultimo_codigo(original[:mencao.start()])
             if codigo is None:
                 continue
             evidencia = corrido.evidencia(trecho.inicio + codigo.start(),

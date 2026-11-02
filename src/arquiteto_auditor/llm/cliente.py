@@ -4,16 +4,20 @@ Trocar de modelo ou de servidor = mudar a configuração ([llm] no config.local.
 Usa só a biblioteca padrão (urllib): nenhuma dependência a mais para o executável.
 
 Toda resposta é JSON validado pelo esquema pedido (o Ollama força o formato) e com
-temperatura 0 e semente fixa, para a mesma pergunta dar a mesma resposta.
+temperatura 0 e semente fixa, para a mesma pergunta dar a mesma resposta. Por isso as
+respostas podem ficar num cache em disco (pasta de dados, nunca no Git): repetir a análise
+do mesmo documento não chama o modelo de novo.
 O conteúdo dos documentos nunca vai para o log (CLAUDE.md §2).
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 from arquiteto_auditor.config import ConfigLLM, config_llm, exigir_endereco_local
 
@@ -31,9 +35,11 @@ class RespostaInvalida(RuntimeError):
 
 
 class ClienteLLM:
-    def __init__(self, config: ConfigLLM | None = None):
+    def __init__(self, config: ConfigLLM | None = None, pasta_cache: Path | None = None):
         self.config = config or config_llm()
         exigir_endereco_local(self.config.endereco)
+        self.pasta_cache = pasta_cache
+        self.chamadas = 0  # perguntas que foram mesmo ao modelo (fora do cache)
 
     def _chamar(self, caminho: str, corpo: dict | None, tempo_limite: float) -> dict:
         dados = json.dumps(corpo).encode("utf-8") if corpo is not None else None
@@ -64,7 +70,12 @@ class ClienteLLM:
             "stream": False,
             "options": {"temperature": self.config.temperatura, "seed": SEMENTE},
         }
+        chave = hashlib.sha256(json.dumps(corpo, sort_keys=True).encode("utf-8")).hexdigest()
+        arquivo = self.pasta_cache / f"{chave}.json" if self.pasta_cache else None
+        if arquivo and arquivo.exists():
+            return json.loads(arquivo.read_text(encoding="utf-8"))
         resposta = self._chamar("/api/chat", corpo, self.config.tempo_limite)
+        self.chamadas += 1
         conteudo = resposta.get("message", {}).get("content", "")
         try:
             dados = json.loads(conteudo)
@@ -73,4 +84,7 @@ class ClienteLLM:
         if not isinstance(dados, dict):
             raise RespostaInvalida("o LLM não devolveu um objeto JSON")
         log.debug("LLM respondeu em %.1f s", resposta.get("total_duration", 0) / 1e9)
+        if arquivo:
+            arquivo.parent.mkdir(parents=True, exist_ok=True)
+            arquivo.write_text(json.dumps(dados, ensure_ascii=False), encoding="utf-8")
         return dados
