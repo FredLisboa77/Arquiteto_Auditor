@@ -124,12 +124,13 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 - Limitação conhecida: matrícula de qualidade "ruim" com 41% de texto errado (meta de ≤ 8% fica para a Fase 13); a confiança baixa a manda para "pendente".
 
 ## Fase 6 — Extração das pranchas
-**Critérios de aceite**
-- [ ] Na base sintética: ≥ 95% dos campos de identificação e ≥ 90% dos campos numéricos corretos.
-- [ ] Todo valor tem evidência com página e bbox; recorte da evidência gerado em imagem.
-- [ ] Associação incerta → marcada como pendente (nunca "chuta" silenciosamente).
-- [ ] Completude: cotas indefinidas, Norte, proprietário e assinaturas detectados em ≥ 90% dos casos sintéticos com omissão, e **zero** falsos "ausente" no conjunto completo.
-- [ ] Assinatura digital: os sintéticos íntegro e alterado são distinguidos em 100% dos casos (pyHanko, offline).
+**Critérios de aceite** — concluída em 01/11/2026 (`scripts/avaliar_pranchas.py`, conjuntos de desenvolvimento)
+- [x] Na base sintética: ≥ 95% dos campos de identificação e ≥ 90% dos campos numéricos corretos (identificação 155/156 = 99,4%; numéricos 197/204 = 96,6%, nenhum errado ou inventado).
+- [x] Todo valor tem evidência com página e bbox; recorte da evidência gerado em imagem (684/684).
+- [x] Associação incerta → marcada como pendente (cotas sem rótulo e muro: 43 pendentes, todos certos).
+- [x] Completude: cotas indefinidas, Norte, proprietário e assinaturas detectados em ≥ 90% dos casos sintéticos com omissão, e **zero** falsos "ausente" no conjunto completo (8/8, zero falsos "ausente" em todos os conjuntos).
+- [x] Assinatura digital: os sintéticos íntegro e alterado são distinguidos em 100% dos casos (pyHanko, offline; 12/12).
+- Limitações conhecidas: cotas com setas não reconhecidas; altura só em cota sem rótulo e cadeia de cotas incompleta não são extraídas ("não encontrado"); sem raízes ICP-Brasil locais, a cadeia de confiança não é verificada; o sint-002 tem o cartório cortado na borda da folha (defeito do gerador). Conjuntos reservados ficam para a Fase 13.
 
 ## Fase 7 — Matrícula, escritura e memorial
 **Critérios de aceite**

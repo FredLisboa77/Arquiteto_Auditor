@@ -27,6 +27,7 @@ from arquiteto_auditor.dominio.documento import (
     Palavra,
     TipoPagina,
 )
+from arquiteto_auditor.ingestao.assinaturas import ler_assinaturas
 from arquiteto_auditor.ingestao.classificador import classificar
 from arquiteto_auditor.ingestao.geometria import linhas_de_cota
 from arquiteto_auditor.ocr.cache import CacheOCR
@@ -150,7 +151,8 @@ class LeitorPDF:
         with pymupdf.open(caminho) as documento:
             paginas = [self.ler_pagina(pagina, numero, hash_documento)
                        for numero, pagina in enumerate(documento, start=1)]
-        lido = DocumentoLido(arquivo=caminho.name, hash_sha256=hash_documento, paginas=paginas)
+        lido = DocumentoLido(arquivo=caminho.name, hash_sha256=hash_documento, paginas=paginas,
+                             assinaturas=ler_assinaturas(caminho))
         classificacao = classificar(lido)
         lido.tipo, lido.confianca_tipo = classificacao.tipo, classificacao.confianca
         lido.motivo_tipo = classificacao.motivo

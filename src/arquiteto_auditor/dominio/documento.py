@@ -9,6 +9,7 @@ as três fontes de texto de um PDF (docs/06-calibracao-exemplos-reais.md §1 e �
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -74,6 +75,19 @@ class PaginaLida(_Modelo):
         return sum(p.confianca for p in self.palavras) / len(self.palavras)
 
 
+class AssinaturaDigital(_Modelo):
+    """Assinatura digital embutida no PDF (ingestao/assinaturas.py). Sem CPF do titular."""
+
+    campo: str | None = None  # nome do campo de assinatura no PDF
+    titular: str | None = None
+    emissor: str | None = None
+    data: datetime | None = None  # data informada pelo assinante
+    integra: bool  # o conteúdo assinado não mudou
+    cobre_arquivo_inteiro: bool  # nada foi salvo no arquivo depois desta assinatura
+    confiavel: bool  # cadeia até uma raiz confiável (offline: só com raízes guardadas)
+    erro: str | None = None  # tipo do erro, se a assinatura não pôde ser conferida
+
+
 class DocumentoLido(_Modelo):
     arquivo: str  # nome do arquivo (sem a pasta)
     hash_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -81,6 +95,7 @@ class DocumentoLido(_Modelo):
     tipo: TipoDocumento = TipoDocumento.OUTRO
     confianca_tipo: float = Field(default=0.0, ge=0, le=1)
     motivo_tipo: str | None = None  # por que o classificador escolheu esse tipo
+    assinaturas: list[AssinaturaDigital] = Field(default_factory=list)
 
     @property
     def escaneado(self) -> bool:

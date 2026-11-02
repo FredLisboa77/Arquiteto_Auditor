@@ -55,6 +55,10 @@ def omissoes_esperadas(especificacao: dict) -> set[tuple[str, str | None]]:
         esperadas.add(("NORTE_INDICADO", None))
     if not apresentacao["mostrar_proprietario"]:
         esperadas.add(("ID_PROPRIETARIO", None))
+    if not apresentacao["assinatura_autor"]:
+        esperadas.add(("ASSINATURA_AUTOR", None))
+    if not apresentacao["assinatura_proprietario"]:
+        esperadas.add(("ASSINATURA_PROPRIETARIO", None))
     return esperadas
 
 
@@ -81,6 +85,7 @@ def main(argumentos: list[str]) -> int:
     gravar_recortes = "--recortes" in argumentos
     rastreio = Counter()
     completude = Counter()
+    integridade = Counter()
     nomes = [a for a in argumentos if not a.startswith("--")]
     leitor = LeitorPDF()
     por_campo: dict[str, Counter] = {campo: Counter() for campo in CAMPOS}
@@ -97,8 +102,16 @@ def main(argumentos: list[str]) -> int:
         verdade = verdade_das_pranchas(especificacao)
         documentos = [leitor.ler(pdf) for pdf in sorted(pasta.glob("prancha*.pdf"))]
         extraidos = extrair_pranchas(documentos)
-        ausentes = {(c.chave, c.escopo) for c in verificar_completude(documentos, extraidos)
-                    if c.situacao == Situacao.AUSENTE}
+        constatacoes = verificar_completude(documentos, extraidos)
+        ausentes = {(c.chave, c.escopo) for c in constatacoes if c.situacao == Situacao.AUSENTE}
+        alterada = any(c.situacao == Situacao.ALTERADA for c in constatacoes)
+        if any(d.assinaturas for d in documentos):
+            integridade["conjuntos assinados"] += 1
+            certo = alterada == especificacao["apresentacao"]["assinatura_alterada"]
+            integridade["distinguidos"] += certo
+            if not certo:
+                print(f"   {pasta.name} integridade: esperado "
+                      f"{'alterada' if not alterada else 'íntegra'}, obtido o contrário")
         esperadas = omissoes_esperadas(especificacao)
         completude["omissões"] += len(esperadas)
         completude["detectadas"] += len(esperadas & ausentes)
@@ -144,6 +157,8 @@ def main(argumentos: list[str]) -> int:
                   f"não encontrados {c['nao encontrado']:2d}  falsos {c['falso valor']:2d}")
     print(f"\nCompletude: {completude['detectadas']}/{completude['omissões']} omissões "
           f"detectadas; {completude['falsos ausentes']} falsos \"ausente\"")
+    print(f"Assinatura digital: íntegro × alterado distinguidos em "
+          f"{integridade['distinguidos']}/{integridade['conjuntos assinados']} conjuntos assinados")
     print(f"Rastreabilidade: {rastreio['com página e bbox']}/{rastreio['evidências']} "
           f"evidências com página e bbox; {rastreio['recortes gerados']} recortes gerados; "
           f"{rastreio['valores sem evidência']} valores sem evidência")

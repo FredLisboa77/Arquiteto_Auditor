@@ -384,7 +384,9 @@ def _corte(sem_altura: bool = False, sem_muro: bool = False) -> PaginaLida:
 
 
 def _ausentes(constatacoes) -> set:
-    return {(c.chave, c.escopo) for c in constatacoes if c.situacao == Situacao.AUSENTE}
+    """Ausências de cotas, Norte e proprietário (as de assinatura têm testes próprios)."""
+    return {(c.chave, c.escopo) for c in constatacoes if c.situacao == Situacao.AUSENTE
+            and not c.chave.startswith("ASSINATURA")}
 
 
 def test_conjunto_completo_nao_tem_nenhum_ausente():
@@ -411,3 +413,56 @@ def test_sem_norte_e_sem_proprietario():
     documento = _prancha(_situacao_desenhada(norte=False), _corte())
     assert _ausentes(verificar_completude([documento], {})) == {
         ("NORTE_INDICADO", None), ("ID_PROPRIETARIO", None)}
+
+
+# ---------------------------------------------------------------- assinaturas
+
+from arquiteto_auditor.dominio.documento import AssinaturaDigital  # noqa: E402
+
+VALORES = {"AUTOR": "Ana Autora", "PROPRIETARIO": "Paulo Dono"}
+
+
+def _assinatura(titular: str, integra: bool = True, cobre: bool = True) -> AssinaturaDigital:
+    return AssinaturaDigital(campo="Assinatura", titular=titular, integra=integra,
+                             cobre_arquivo_inteiro=cobre, confiavel=False)
+
+
+def _assinada(*assinaturas: AssinaturaDigital) -> DocumentoLido:
+    return _prancha(_situacao_desenhada(), _corte()).model_copy(
+        update={"assinaturas": list(assinaturas)})
+
+
+def _constatacoes(documento, valores=VALORES) -> set:
+    return {(c.chave, c.situacao.value) for c in verificar_completude([documento], valores)
+            if c.chave.startswith("ASSINATURA")}
+
+
+def test_assinaturas_do_autor_e_do_proprietario_integras():
+    documento = _assinada(_assinatura("ANA AUTORA"), _assinatura("Paulo Dono"))
+    assert _constatacoes(documento) == {("ASSINATURA_AUTOR", "presente"),
+                                        ("ASSINATURA_PROPRIETARIO", "presente"),
+                                        ("ASSINATURA_DIGITAL_VALIDA", "presente")}
+
+
+def test_falta_a_assinatura_do_proprietario():
+    assert ("ASSINATURA_PROPRIETARIO", "ausente") in _constatacoes(
+        _assinada(_assinatura("Ana Autora")))
+
+
+def test_sem_nome_do_proprietario_qualquer_outra_assinatura_conta():
+    documento = _assinada(_assinatura("Ana Autora"), _assinatura("Alguém"))
+    assert ("ASSINATURA_PROPRIETARIO", "presente") in _constatacoes(
+        documento, {"AUTOR": "Ana Autora"})
+    assert ("ASSINATURA_PROPRIETARIO", "ausente") in _constatacoes(
+        _assinada(_assinatura("Ana Autora")), {"AUTOR": "Ana Autora"})
+
+
+@pytest.mark.parametrize("integra, cobre", [(False, True), (True, False)])
+def test_documento_alterado_depois_de_assinado(integra, cobre):
+    documento = _assinada(_assinatura("Ana Autora", integra, cobre))
+    assert ("ASSINATURA_DIGITAL_VALIDA", "alterada") in _constatacoes(documento)
+
+
+def test_sem_nenhuma_assinatura():
+    assert _constatacoes(_assinada()) == {("ASSINATURA_AUTOR", "ausente"),
+                                          ("ASSINATURA_PROPRIETARIO", "ausente")}

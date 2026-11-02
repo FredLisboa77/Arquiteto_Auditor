@@ -11,7 +11,11 @@
   Linha que não se consegue associar a um elemento não gera constatação (não se afirma).
 - NORTE_INDICADO: um "N" (ou "NORTE") isolado em alguma folha.
 - ID_PROPRIETARIO: o carimbo traz o nome do proprietário.
-As assinaturas (presença e integridade) são lidas do próprio PDF, em outro módulo.
+- ASSINATURA_AUTOR / ASSINATURA_PROPRIETARIO: assinatura digital no PDF cujo titular tem o
+  nome do autor (ou do proprietário) lido no carimbo. Sem o nome do proprietário, qualquer
+  assinatura que não seja a do autor conta. Precisa estar em todos os arquivos de pranchas.
+- ASSINATURA_DIGITAL_VALIDA: "alterada" se alguma assinatura não confere com o conteúdo, ou se
+  algo foi salvo no arquivo depois de todas as assinaturas (ingestao/assinaturas.py).
 """
 
 from __future__ import annotations
@@ -38,6 +42,7 @@ Segmento = tuple[float, float, float, float]
 class Situacao(StrEnum):
     PRESENTE = "presente"
     AUSENTE = "ausente"
+    ALTERADA = "alterada"  # documento alterado depois de assinado
 
 
 @dataclass(frozen=True)
@@ -170,6 +175,68 @@ def _consolidar_cotas(constatacoes: list[Constatacao]) -> list[Constatacao]:
     return list(por_escopo.values())
 
 
+def _tokens(nome) -> set[str]:
+    texto = str(getattr(nome, "valor", nome))  # aceita ValorExtraido ou texto
+    return set(_normalizar(texto).split())
+
+
+def _mesmo_nome(titular: str | None, nome) -> bool:
+    """Um nome contém o outro (o certificado costuma trazer o nome completo)."""
+    a, b = _tokens(titular or ""), _tokens(nome)
+    return bool(a and b) and (a <= b or b <= a)
+
+
+def _evidencia_assinatura(documento: DocumentoLido, assinatura) -> Evidencia:
+    return Evidencia(documento=documento.arquivo, pagina=1,
+                     trecho=f"[assinatura digital {assinatura.campo or ''} de "
+                            f"{assinatura.titular or 'titular desconhecido'}]")
+
+
+def _assinaturas(pranchas: list[DocumentoLido], valores: dict) -> list[Constatacao]:
+    autor, proprietario = valores.get("AUTOR"), valores.get("PROPRIETARIO")
+    resultado = []
+
+    def de_quem(documento: DocumentoLido, chave: str):
+        if chave == "ASSINATURA_AUTOR":
+            return [a for a in documento.assinaturas if _mesmo_nome(a.titular, autor)]
+        if proprietario is not None:
+            return [a for a in documento.assinaturas if _mesmo_nome(a.titular, proprietario)]
+        return [a for a in documento.assinaturas if not _mesmo_nome(a.titular, autor)]
+
+    for chave, nome in (("ASSINATURA_AUTOR", autor), ("ASSINATURA_PROPRIETARIO", True)):
+        if nome is None:
+            continue  # sem o nome do autor não dá para saber de quem é cada assinatura
+        faltando = [d.arquivo for d in pranchas if not de_quem(d, chave)]
+        if faltando:
+            resultado.append(Constatacao(chave, Situacao.AUSENTE,
+                                         motivo=f"sem assinatura digital em {', '.join(faltando)}"))
+        else:
+            resultado.append(Constatacao(chave, Situacao.PRESENTE, evidencias=tuple(
+                _evidencia_assinatura(d, a) for d in pranchas for a in de_quem(d, chave))))
+
+    assinadas = [d for d in pranchas if d.assinaturas]
+    violadas = [(d, a) for d in assinadas for a in d.assinaturas if not a.integra]
+    descobertas = [d for d in assinadas if not any(a.cobre_arquivo_inteiro
+                                                    for a in d.assinaturas)]
+    if violadas:
+        resultado.append(Constatacao(
+            "ASSINATURA_DIGITAL_VALIDA", Situacao.ALTERADA,
+            evidencias=tuple(_evidencia_assinatura(d, a) for d, a in violadas),
+            motivo="o conteúdo não confere com a assinatura (alterado depois de assinado)"))
+    elif descobertas:
+        resultado.append(Constatacao(
+            "ASSINATURA_DIGITAL_VALIDA", Situacao.ALTERADA,
+            evidencias=tuple(_evidencia_assinatura(d, d.assinaturas[-1]) for d in descobertas),
+            motivo="há alterações salvas no arquivo depois das assinaturas"))
+    elif assinadas:
+        resultado.append(Constatacao(
+            "ASSINATURA_DIGITAL_VALIDA", Situacao.PRESENTE,
+            evidencias=tuple(_evidencia_assinatura(d, a) for d in assinadas
+                             for a in d.assinaturas),
+            motivo="assinaturas íntegras (cadeia de confiança não verificada offline)"))
+    return resultado
+
+
 def verificar_completude(documentos: list[DocumentoLido], valores: dict) -> list[Constatacao]:
     """Constatações de completude das pranchas; `valores` = campos já extraídos."""
     pranchas = [d for d in documentos if d.tipo == TipoDocumento.PRANCHA]
@@ -188,6 +255,7 @@ def verificar_completude(documentos: list[DocumentoLido], valores: dict) -> list
     resultado = _consolidar_cotas(cotas)
     resultado.append(norte or Constatacao("NORTE_INDICADO", Situacao.AUSENTE,
                                           motivo="nenhum \"N\" ou \"NORTE\" nas pranchas"))
+    resultado += _assinaturas(pranchas, valores)
     if "PROPRIETARIO" in valores:
         resultado.append(Constatacao("ID_PROPRIETARIO", Situacao.PRESENTE,
                                      motivo="proprietário identificado no carimbo"))
