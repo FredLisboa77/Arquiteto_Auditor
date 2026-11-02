@@ -22,9 +22,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from dataclasses import dataclass, field
-from enum import StrEnum
 
+from arquiteto_auditor.dominio.constatacao import Constatacao, Situacao
 from arquiteto_auditor.dominio.documento import DocumentoLido, PaginaLida
 from arquiteto_auditor.dominio.modelos import Evidencia, TipoDocumento
 from arquiteto_auditor.dominio.numeros import encontrar_valores
@@ -37,21 +36,6 @@ DISTANCIA_MURO = 10  # em alturas de letra: até onde a cota é a do muro
 TRECHO_SEM_NUMERO = "[linha de cota sem número]"  # descrição (não há texto a citar)
 
 Segmento = tuple[float, float, float, float]
-
-
-class Situacao(StrEnum):
-    PRESENTE = "presente"
-    AUSENTE = "ausente"
-    ALTERADA = "alterada"  # documento alterado depois de assinado
-
-
-@dataclass(frozen=True)
-class Constatacao:
-    chave: str  # chave do catálogo (COTA_INDEFINIDA, NORTE_INDICADO, ID_PROPRIETARIO...)
-    situacao: Situacao
-    escopo: str | None = None  # ex.: "elemento=recuo_fundos"
-    evidencias: tuple[Evidencia, ...] = field(default_factory=tuple)
-    motivo: str = ""
 
 
 def _normalizar(texto: str) -> str:

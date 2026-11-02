@@ -150,10 +150,13 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 - Limitações conhecidas: tabela de lei escaneada não é lida (zona ilegível no OCR) → "não encontrado"/pendente; parâmetro típico da lei achado só no condomínio fica pendente; muro com valor único (sem altura por posição); na análise real a área do lote virá da matrícula. Conjuntos reservados ficam para a Fase 13.
 
 ## Fase 9 — Motor de verificação
-**Critérios de aceite**
-- [ ] Testes unitários para cada regra, incluindo valores exatamente no limite.
-- [ ] Margens e quantidades sugeridas corretas (ex.: TO 62% / 60% num terreno de 400 m² → reduzir 8,0 m²).
-- [ ] Nenhuma chamada ao LLM dentro do motor (verificado por teste).
+**Critérios de aceite** — concluída em 02/11/2026 (`tests/test_verificacao.py`, `tests/test_motor.py` e `scripts/avaliar_verificacao.py`, conjuntos de desenvolvimento)
+- [x] Testes unitários para cada regra, incluindo valores exatamente no limite (no limite, atende).
+- [x] Margens e quantidades sugeridas corretas (ex.: TO 62% / 60% num terreno de 400 m² → reduzir 8,0 m²).
+- [x] Nenhuma chamada ao LLM dentro do motor (verificado por teste: o motor não importa o LLM nem rede).
+- Análise completa (todos os leitores + motor): revocação 28/29 apontados + 1 marcado para confirmação; falso "atende" 0; falsos alarmes 0; classificação 95,7%; 100% com evidência. Sem Ollama: 24/29 + 5 marcados, falso "atende" 0, classificação 90,6%.
+- Decisões: com a matrícula, a área da escritura vira observação; diferença com leitura incerta → "não foi possível verificar"; aritmética no quadro de áreas da prancha; valor ausente na prancha → o do memorial, com baixa confiança; ausência só vira "não atende" com a evidência de onde se procurou.
+- Limitações conhecidas: dado presente em um documento só → "não foi possível verificar"; com a lei não lida (escaneada), o limite do condomínio é usado com baixa confiança; muro por posição e consulta prévia ficam para depois.
 
 ## Fase 10 — Interface I
 **Critérios de aceite**

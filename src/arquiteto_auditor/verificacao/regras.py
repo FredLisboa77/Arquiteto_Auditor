@@ -27,6 +27,11 @@ from arquiteto_auditor.dominio.parametros import ParametroAdotado
 FOLGA_NUMERICA = 1e-6  # só para erros de arredondamento do computador, não é tolerância
 
 
+def maiuscula(texto: str) -> str:
+    """Primeira letra maiúscula, o resto como está ("RRT/ART" continua "RRT/ART")."""
+    return texto[:1].upper() + texto[1:]
+
+
 @dataclass(frozen=True)
 class RegraLimite:
     nome: str  # como aparece na mensagem: "taxa de ocupação"
@@ -117,7 +122,7 @@ def verificar_limite(chave: str, projeto: ValorExtraido | None,
             chave=chave, status=StatusItem.NAO_VERIFICAVEL, evidencias=evidencias,
             limite=limite, observacoes=observacoes,
             mensagem=sem_projeto or f"Valor de {regra.nome} do projeto não encontrado.")
-    if projeto.observacao and projeto.origem == "calculado":
+    if projeto.observacao:  # fórmula usada, valor vindo do memorial...
         observacoes.insert(0, projeto.observacao)
 
     valor = float(projeto.valor)
@@ -132,7 +137,7 @@ def verificar_limite(chave: str, projeto: ValorExtraido | None,
     if regra.unidade == "%":
         situacao = situacao.replace("%", " p.p.")  # diferença de porcentagens: pontos percentuais
     fonte = "prefeitura" if parametro.fonte == "prefeitura" else "condomínio"
-    mensagem = (f"{regra.nome.capitalize()} do projeto: {_f(valor, regra)} · {palavra} "
+    mensagem = (f"{maiuscula(regra.nome)} do projeto: {_f(valor, regra)} · {palavra} "
                 f"{_f(limite, regra)} ({fonte}) · {situacao}")
     mensagem += "" if mensagem.endswith(".") else "."
     return ItemVerificacao(
@@ -174,7 +179,7 @@ def verificar_declarado(chave: str, nome: str, declarado: ValorExtraido | None,
     tolerancia = tolerancia_do_declarado(declarado, tolerancia_minima)
     diferenca = valor - calculo
     confere = abs(diferenca) <= tolerancia + FOLGA_NUMERICA
-    texto = (f"{nome.capitalize()} declarado(a): {formatar_numero(valor)}{unidade} · "
+    texto = (f"{maiuscula(nome)} declarado(a): {formatar_numero(valor)}{unidade} · "
              f"recalculado(a): {formatar_numero(calculo, 4)}{unidade}")
     return ItemVerificacao(
         chave=chave, status=StatusItem.ATENDE if confere else StatusItem.DIVERGENTE,
