@@ -4,17 +4,37 @@ Matrícula, escritura e memorial são lidos como TEXTO (frases, atos que passam 
 para outra), mas toda conclusão precisa de evidência com página e posição (CLAUDE.md §3).
 Esta classe junta as linhas de todas as páginas num texto só e, para qualquer trecho dele,
 devolve a página, o retângulo das linhas e a menor confiança do OCR das palavras.
+
+Ordem das linhas: a do PDF no texto selecionável; nas páginas escaneadas (coluna única),
+de cima para baixo — a numeração de blocos do OCR pode pôr um pedaço do parágrafo depois de
+outro quando um carimbo o interrompe.
 """
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
 
-from arquiteto_auditor.dominio.documento import DocumentoLido, OrigemPalavra, Palavra
+from arquiteto_auditor.dominio.documento import (
+    DocumentoLido,
+    OrigemPalavra,
+    Palavra,
+    TipoPagina,
+)
 from arquiteto_auditor.dominio.modelos import Evidencia
 from arquiteto_auditor.extracao.pranchas.linhas import uniao_bbox
 
 LIMITE_TRECHO = 300  # caracteres guardados na evidência
+
+
+def normalizar(texto: str) -> str:
+    """Maiúsculas sem acentos, com o MESMO tamanho: as posições continuam valendo."""
+    saida = []
+    for c in texto:
+        base = unicodedata.normalize("NFD", c)[0]
+        maiuscula = base.upper()
+        saida.append(maiuscula if len(maiuscula) == 1 else base)  # "ß".upper() = "SS"
+    return "".join(saida)
 
 
 @dataclass(frozen=True)
@@ -23,6 +43,7 @@ class _Linha:
     fim: int
     pagina: int
     palavras: tuple[Palavra, ...]
+    posicoes: tuple[tuple[int, int], ...]  # (início, fim) de cada palavra no texto corrido
 
 
 class TextoCorrido:
@@ -34,12 +55,20 @@ class TextoCorrido:
             grupos: dict[tuple[int, int], list[Palavra]] = {}
             for palavra in pagina.palavras:
                 grupos.setdefault((palavra.bloco, palavra.linha), []).append(palavra)
-            for _, palavras in sorted(grupos.items()):
+            ordem = sorted(grupos.items())
+            if pagina.tipo == TipoPagina.ESCANEADA:
+                ordem.sort(key=lambda g: (min(p.bbox[1] for p in g[1]),
+                                          min(p.bbox[0] for p in g[1])))
+            for _, palavras in ordem:
                 texto = " ".join(p.texto for p in palavras)
                 if partes:
                     posicao += 1  # o "\n" entre as linhas
+                posicoes, cursor = [], posicao
+                for p in palavras:
+                    posicoes.append((cursor, cursor + len(p.texto)))
+                    cursor += len(p.texto) + 1
                 self._linhas.append(_Linha(posicao, posicao + len(texto), pagina.numero,
-                                           tuple(palavras)))
+                                           tuple(palavras), tuple(posicoes)))
                 partes.append(texto)
                 posicao += len(texto)
         self.texto = "\n".join(partes)
@@ -50,7 +79,8 @@ class TextoCorrido:
     def confianca(self, inicio: int, fim: int) -> float | None:
         """Menor confiança do OCR nas palavras do trecho (None se não há palavra de OCR)."""
         valores = [p.confianca for ln in self._linhas_do_trecho(inicio, fim)
-                   for p in ln.palavras if p.origem == OrigemPalavra.OCR]
+                   for p, (a, b) in zip(ln.palavras, ln.posicoes, strict=True)
+                   if p.origem == OrigemPalavra.OCR and a < fim and b > inicio]
         return min(valores) if valores else None
 
     def pagina(self, posicao: int) -> int | None:

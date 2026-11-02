@@ -5,7 +5,8 @@ Uso:  .venv/Scripts/python scripts/avaliar_registro.py [--reservados] [--detalhe
 Sem --reservados, usa só os conjuntos de desenvolvimento (docs/05-avaliacao.md §4). A verdade
 vem da especificacao.json (avaliacao/verdade_registro.py). Mede:
 - atos: certo = mesmo código, mesmo tipo e mesma data; "a mais" = ato que não existe;
-- estado atual: área, proprietário e ônus ativos, e se cada campo aponta o ato de origem.
+- estado atual: área, proprietário e ônus ativos, e se cada campo aponta o ato de origem;
+  valor errado que não ficou pendente de confirmação é o pior erro (precisa ser zero).
 """
 
 from __future__ import annotations
@@ -72,7 +73,9 @@ def main(argumentos: list[str]) -> int:
                 else _texto(valor.valor) == _texto(esperado))
             estado["certos"] += certo
             estado["com ato de origem"] += bool(valor and valor.ato_origem)
-            estado["pendentes"] += bool(valor and valor.status == "pendente_confirmacao")
+            pendente = bool(valor and valor.status == "pendente_confirmacao")
+            estado["pendentes"] += pendente
+            estado["errados automáticos"] += bool(valor) and not certo and not pendente
             if detalhes and not certo:
                 print(f"   {pasta.name} {campo}: esperado {esperado!r}, "
                       f"lido {valor.valor if valor else None!r}")
@@ -83,7 +86,8 @@ def main(argumentos: list[str]) -> int:
           f"{atos['a mais']} a mais ou errados")
     print(f"Estado atual: {estado['certos']}/{estado['esperados']} certos "
           f"({100 * estado['certos'] / max(estado['esperados'], 1):.1f}%); "
-          f"{estado['com ato de origem']} com ato de origem; {estado['pendentes']} pendentes")
+          f"{estado['com ato de origem']} com ato de origem; {estado['pendentes']} pendentes; "
+          f"{estado['errados automáticos']} errados SEM pendência (precisa ser 0)")
     return 0
 
 

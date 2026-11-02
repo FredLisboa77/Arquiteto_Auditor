@@ -207,6 +207,14 @@ def ler_extenso(texto: str) -> int | None:
     return total + atual
 
 
+def numero_do_extenso(extenso: str) -> int | None:
+    """Parte inteira de um extenso com unidade: "trezentos metros quadrados e ..." → 300.
+
+    Tolera pontuação solta (sujeira de OCR: "trezentos e. sessenta").
+    """
+    return _numero_no_extenso(re.sub(r"[^\w\s]", " ", extenso))
+
+
 def _numero_no_extenso(extenso: str) -> int | None:
     """Parte numérica de um extenso entre parênteses: "cinquenta por cento" → 50."""
     texto = _sem_acentos(extenso)

@@ -17,12 +17,12 @@ não se encaixa em nenhum tipo vira pendência.
 from __future__ import annotations
 
 import re
-import unicodedata
 
 from arquiteto_auditor.dominio.datas import encontrar_data
 from arquiteto_auditor.dominio.documento import DocumentoLido
 from arquiteto_auditor.dominio.registro import AtoMatricula, MatriculaLida, TipoAto
-from arquiteto_auditor.extracao.texto_corrido import TextoCorrido
+from arquiteto_auditor.extracao.registro.estado import AtoComPosicao, calcular_estado
+from arquiteto_auditor.extracao.texto_corrido import TextoCorrido, normalizar
 
 SALTO_MAXIMO = 3  # atos ilegíveis tolerados entre dois cabeçalhos
 CONFIANCA_ATO = 0.95  # leitura por regra; multiplicada pela confiança do OCR do cabeçalho
@@ -30,10 +30,14 @@ FATOR_SO_PELO_CORPO = 0.8  # o título existe mas não foi reconhecido: tipo pel
 
 # Tolerante a sujeiras comuns do OCR no cabeçalho: "A V-3", "R-=3", "R-I/..." (I no lugar de 1)
 _CABECALHO = re.compile(
-    r"^\W{0,3}(?P<letra>R|A\s?V)\s*[-.–=_]{0,3}\s*(?P<numero>[\dIl|O]{1,3})\s*[/-]",
+    r"^[^\w\n]{0,3}(?P<letra>R|A\s?V)\s*[-.–=_]{0,3}\s*(?P<numero>[\dIl|O]{1,3})\s*[/-]",
     re.MULTILINE)
 _PARECIDOS_COM_DIGITO = str.maketrans("Il|O", "1110")
 _NUMERO_MATRICULA = re.compile(r"MATRICULA\s*N[º°O.]?\s*(?P<numero>\d[\d.]*\d)")
+# Linha com jeito de cabeçalho ("XXXX - Em 27 de janeiro de 2019") que não foi reconhecida:
+# possível ato com o código ilegível.
+_CABECALHO_ILEGIVEL = re.compile(
+    r"^[^\n]{1,25}?\s[-–|]\s*EM\s+\d{1,2}\s*[º°O]?\s+DE\s+[A-Z]+", re.MULTILINE)
 _FECHO = re.compile(r"^\W{0,3}CERTID[AÃ]O\b|CERTIFICO", re.MULTILINE)
 _TITULO = re.compile(r"^[\W\d]*(?P<titulo>[A-Z][A-Z ,/]{3,60}):")
 
@@ -49,11 +53,6 @@ _PALAVRAS_CHAVE: list[tuple[TipoAto, tuple[str, ...]]] = [
     (TipoAto.ALTERACAO_DENOMINACAO, (r"DENOMINA", r"NUMERACAO", r"EMPLACAMENTO")),
     (TipoAto.CONSTRUCAO, (r"CONSTRU",)),
 ]
-
-
-def _normalizar(texto: str) -> str:
-    """Maiúsculas sem acentos, com o MESMO tamanho (as posições continuam valendo)."""
-    return "".join(unicodedata.normalize("NFD", c)[0] for c in texto.upper())
 
 
 def _classificar(texto: str) -> tuple[TipoAto, float]:
@@ -93,7 +92,7 @@ def _cabecalhos(normalizado: str, pendencias: list[str]) -> list[tuple[str, int]
 def ler_matricula(documento: DocumentoLido) -> MatriculaLida:
     corrido = TextoCorrido(documento)
     texto = corrido.texto
-    normalizado = _normalizar(texto)
+    normalizado = normalizar(texto)
     pendencias: list[str] = []
     numero = _NUMERO_MATRICULA.search(normalizado)
     cabecalhos = _cabecalhos(normalizado, pendencias)
@@ -110,7 +109,7 @@ def ler_matricula(documento: DocumentoLido) -> MatriculaLida:
         fim = cabecalhos[i + 1][1] if i + 1 < len(cabecalhos) else fim_atos
         trechos.append((codigo, inicio, max(fim, inicio)))
 
-    atos = []
+    atos: list[AtoComPosicao] = []
     for codigo, inicio, fim in trechos:
         conteudo = texto[inicio:fim].strip()
         if not conteudo:
@@ -128,9 +127,18 @@ def ler_matricula(documento: DocumentoLido) -> MatriculaLida:
                 pendencias.append(f"Ato {codigo} não compreendido: confira se ele muda a área, "
                                   "o proprietário ou os ônus do imóvel.")
         confianca_ocr = corrido.confianca(inicio, min(fim, inicio + 120))
-        atos.append(AtoMatricula(
+        atos.append(AtoComPosicao(AtoMatricula(
             codigo=codigo, tipo=tipo, data=data, texto=conteudo,
             evidencia=corrido.evidencia(inicio, min(fim, inicio + 300), documento.arquivo),
-            confianca=round(CONFIANCA_ATO * fator * (confianca_ocr or 1.0), 3)))
+            confianca=round(CONFIANCA_ATO * fator * (confianca_ocr or 1.0), 3)), inicio, fim))
+    reconhecidos = {inicio for _, inicio in cabecalhos}
+    suspeitos = [m.start() for m in _CABECALHO_ILEGIVEL.finditer(normalizado, inicio_atos,
+                                                                  fim_atos)
+                 if m.start() not in reconhecidos]
+    for posicao in suspeitos:
+        pendencias.append(f"Possível ato com o código ilegível (pág. {corrido.pagina(posicao)}): "
+                          f"\"{' '.join(texto[posicao:posicao + 60].split())}...\". Confira.")
+    estado, pendencias_estado = calcular_estado(atos, corrido, documento.arquivo, suspeitos)
     return MatriculaLida(arquivo=documento.arquivo, numero=numero["numero"] if numero else None,
-                         atos=atos, pendencias=pendencias)
+                         atos=[item.ato for item in atos], estado_atual=estado,
+                         pendencias=pendencias + pendencias_estado)

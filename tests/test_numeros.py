@@ -177,3 +177,12 @@ def test_codigos_de_controle_do_autocad():
     (achado,) = encontrar_valores("TAXA 29.99%%% (máx.)")
     assert achado.valor == 29.99 and achado.unidade == "%"
     assert "TAXA 29.99%%% (máx.)"[achado.inicio:achado.inicio + 5] == "29.99"  # posição mantida
+
+
+def test_numero_do_extenso_de_area():
+    from arquiteto_auditor.dominio.numeros import numero_do_extenso
+    assert numero_do_extenso("trezentos e setenta e cinco metros quadrados") == 375
+    assert numero_do_extenso("quatrocentos e quarenta e seis metros quadrados e vinte e "
+                             "cinco decímetros quadrados") == 446  # a parte inteira
+    assert numero_do_extenso("trezentos e. sessenta metros quadrados") == 360  # sujeira de OCR
+    assert numero_do_extenso("sem número") is None
