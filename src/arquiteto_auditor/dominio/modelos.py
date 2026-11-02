@@ -92,6 +92,7 @@ class ValorExtraido(_Modelo):
     evidencias: list[Evidencia] = Field(default_factory=list)
     status: StatusConfirmacao = StatusConfirmacao.AUTOMATICO
     calculado_de: list[str] = Field(default_factory=list)  # campos usados no cálculo
+    ato_origem: str | None = None  # ato da matrícula que definiu o valor (ex.: "AV-2")
     observacao: str | None = None
 
     @model_validator(mode="after")
