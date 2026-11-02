@@ -30,6 +30,9 @@ class DefinicaoParametro:
     # Exceções que só valem logo depois do número ("muro de 80 cm no trecho do recuo
     # frontal"): na mesma frase pode estar a altura que vale ("... até a altura de 2,20 m").
     excecoes_apos_o_numero: tuple[str, ...] = ()
+    # Parâmetro que as leis de uso do solo costumam definir. Achado só na norma do condomínio,
+    # pode ser que a lei defina e a leitura dela tenha falhado (ex.: tabela escaneada).
+    tipico_da_lei: bool = True
 
     def citado_em(self, texto: str) -> bool:
         return _contem(normalizar(texto), self.sinonimos)
@@ -103,9 +106,12 @@ DEFINICOES = (
         ("PERIMETRAL", "GRADIL", "CERCA VIVA", "TAPUME", "ARRIMO", "NAO PODERA SER CONSTRUIDO",
          "PROIBIDA A CONSTRUCAO"),
         # Muro rebaixado na faixa do recuo frontal é exceção, não a altura máxima do muro.
-        excecoes_apos_o_numero=("RECUO FRONTAL", "FAIXA DO RECUO", "TRECHO DO RECUO")),
+        excecoes_apos_o_numero=("RECUO FRONTAL", "FAIXA DO RECUO", "TRECHO DO RECUO"),
+        tipico_da_lei=False),
     DefinicaoParametro(
         "area_construida_min", ("AREA_CONSTR_MIN",), "área construída mínima da residência",
         "minimo", "m2", ("AREA CONSTRUIDA", "AREA DE CONSTRUCAO", "AREA MINIMA CONSTRUIDA"),
-        _EXCECOES_GERAIS + ("SUPERIOR A", "ACIMA DE")),
+        _EXCECOES_GERAIS + ("SUPERIOR A", "ACIMA DE"), tipico_da_lei=False),
 )
+
+POR_CHAVE = {chave: definicao for definicao in DEFINICOES for chave in definicao.chaves}

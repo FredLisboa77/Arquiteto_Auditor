@@ -10,7 +10,7 @@ Para cada parâmetro:
    - a parte da frase onde está o número cita o parâmetro e não fala de exceção
      (muro perimetral, lote de esquina...), nem de redação anterior/revogada;
    - a unidade combina com a do parâmetro;
-   - na lei, o último código de zona antes do número (se houver) é a zona do lote.
+   - na lei, o último código de zona antes do número (ou o do título) é a zona do lote.
 """
 
 from __future__ import annotations
@@ -54,9 +54,12 @@ def _padrao_zona(zona: str) -> re.Pattern:
 
 
 def selecionar_trechos(trechos: list[Trecho], definicao: DefinicaoParametro,
-                       zona: str | None) -> list[Trecho]:
-    """Trechos que citam o parâmetro (e a zona, na lei), os mais específicos primeiro."""
-    padrao = _padrao_zona(zona) if zona else None
+                       zona: str | None, exigir_zona: bool = True) -> list[Trecho]:
+    """Trechos que citam o parâmetro (e a zona, na lei), os mais específicos primeiro.
+
+    exigir_zona=False só no teste de alucinação: manda ao LLM trechos de outras zonas.
+    """
+    padrao = _padrao_zona(zona) if zona and exigir_zona else None
     escolhidos = []
     for ordem, trecho in enumerate(trechos):
         if not definicao.citado_em(trecho.texto):
@@ -71,6 +74,11 @@ def selecionar_trechos(trechos: list[Trecho], definicao: DefinicaoParametro,
         escolhidos.append((nota, len(trecho.texto) > 600, ordem, trecho))
     escolhidos.sort(key=lambda item: item[:3])
     return [item[3] for item in escolhidos[:MAXIMO_TRECHOS]]
+
+
+def clausulas(texto: str) -> list[str]:
+    """O texto dividido nas partes da frase (os separadores ficam de fora)."""
+    return [parte for parte in _LIMITE_DE_CLAUSULA.split(texto) if parte.strip()]
 
 
 def limites_da_clausula(texto: str, inicio: int, fim: int) -> tuple[int, int]:
@@ -118,8 +126,11 @@ def _conferir(resposta: dict, enviados: list[Trecho], corrido: TextoCorrido,
         if lido.unidade is not None and lido.unidade not in _UNIDADES_ACEITAS[definicao.unidade]:
             return None
         if zona is not None:
-            codigo = ultimo_codigo(fonte[:inicio])
-            if codigo is not None and not mesma_zona(codigo.group(1), zona):
+            # O código de zona mais próximo antes do número (ou o do título) precisa ser o da
+            # zona do lote; sem código nenhum (ex.: tabela escaneada com a zona ilegível), não
+            # há como saber de que zona é o número.
+            codigo = ultimo_codigo(fonte[:inicio]) or ultimo_codigo(trecho.titulo)
+            if codigo is None or not mesma_zona(codigo.group(1), zona):
                 return None
         return trecho.inicio + inicio, trecho.inicio + fim
     return None
@@ -127,7 +138,8 @@ def _conferir(resposta: dict, enviados: list[Trecho], corrido: TextoCorrido,
 
 def ler_texto_de_parametros(trechos: list[Trecho], corrido: TextoCorrido, arquivo: str,
                             definicoes: tuple[DefinicaoParametro, ...], zona: str | None,
-                            cliente: ClienteLLM) -> dict[str, list[ValorExtraido]]:
+                            cliente: ClienteLLM,
+                            exigir_zona: bool = True) -> dict[str, list[ValorExtraido]]:
     """Valores confirmados no texto corrido, por chave do catálogo.
 
     zona=None → norma do condomínio (sem zona). LLMIndisponivel não é tratado aqui: quem
@@ -137,7 +149,7 @@ def ler_texto_de_parametros(trechos: list[Trecho], corrido: TextoCorrido, arquiv
     modelo_pedido = carregar_prompt("parametro_pedido")
     resultado: dict[str, list[ValorExtraido]] = {}
     for definicao in definicoes:
-        enviados = selecionar_trechos(trechos, definicao, zona)
+        enviados = selecionar_trechos(trechos, definicao, zona, exigir_zona)
         if not enviados:
             continue
         lista = "\n".join(f"[{i}] {t.texto}" for i, t in enumerate(enviados, start=1))

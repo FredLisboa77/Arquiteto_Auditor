@@ -141,11 +141,13 @@ A base sintética vem **cedo (fases 3–4)** porque todo o resto é testado cont
 - Limitações conhecidas: na matrícula "ruim" um ato fica ilegível (vira pendência e deixa o estado pendente); erros de OCR restantes aparecem como pendentes, não são corrigidos; a área da escritura é a da data da venda (a atual vale pela matrícula). Conjuntos reservados ficam para a Fase 13.
 
 ## Fase 8 — Parâmetros (prefeitura e condomínio)
-**Critérios de aceite**
-- [ ] Zona identificada ou perguntada; nunca presumida.
-- [ ] ≥ 90% dos parâmetros sintéticos corretos; 100% com trecho literal verificado.
-- [ ] Teste de alucinação: com a lei sem o parâmetro, o sistema responde "não encontrado" (não inventa).
-- [ ] Conflito prefeitura × condomínio → adota o da prefeitura e registra observação com o valor do condomínio. Parâmetro só do condomínio (ex.: altura de muro) → usa o do condomínio.
+**Critérios de aceite** — concluída em 02/11/2026 (`scripts/avaliar_parametros.py` e `scripts/avaliar_alucinacao.py`, conjuntos de desenvolvimento)
+- [x] Zona identificada ou perguntada; nunca presumida (12/12, pelo nome do condomínio no perímetro das zonas; sem menção → perguntar; OCR fraco → pendente).
+- [x] ≥ 90% dos parâmetros sintéticos corretos; 100% com trecho literal verificado (prefeitura 121/132 = 91,7%; condomínio 38/38; evidências 203/203; nenhum valor errado sem pendência).
+- [x] Teste de alucinação: com a lei sem o parâmetro, o sistema responde "não encontrado" (0 inventados, inclusive no modo forçado com valores de outras zonas como isca).
+- [x] Conflito prefeitura × condomínio → adota o da prefeitura e registra observação com o valor do condomínio. Parâmetro só do condomínio (ex.: altura de muro) → usa o do condomínio (139 adotados certos, 8 conflitos registrados).
+- Como funciona: tabelas lidas pelo código (zona × parâmetro, faixa de área do lote); texto corrido pelo LLM local com citação conferida pelo código; sem Ollama, só as tabelas.
+- Limitações conhecidas: tabela de lei escaneada não é lida (zona ilegível no OCR) → "não encontrado"/pendente; parâmetro típico da lei achado só no condomínio fica pendente; muro com valor único (sem altura por posição); na análise real a área do lote virá da matrícula. Conjuntos reservados ficam para a Fase 13.
 
 ## Fase 9 — Motor de verificação
 **Critérios de aceite**

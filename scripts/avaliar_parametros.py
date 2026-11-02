@@ -3,10 +3,11 @@
 Uso:  .venv/Scripts/python scripts/avaliar_parametros.py [--reservados] [--sem-llm] [--detalhes]
                                                          [conjunto ...]
 
-A verdade é o gabarito de cada conjunto (valores_esperados[chave]["prefeitura" ou
-"condominio"]). Para cada valor: certo, errado, não encontrado ou falso valor (o documento
-não define, mas algo foi extraído). Valor errado que não ficou pendente é o pior erro
-(precisa ser 0). Também confere que o trecho de cada evidência existe no documento.
+A verdade é o gabarito de cada conjunto (valores_esperados[chave]["prefeitura",
+"condominio" e "adotado"]). Para cada valor: certo, errado, não encontrado ou falso valor
+(o documento não define, mas algo foi extraído). Valor errado que não ficou pendente é o pior erro
+(precisa ser 0). Também confere que o trecho de cada evidência existe no documento e o valor
+adotado pela hierarquia (a prefeitura prevalece; o condomínio vira observação).
 
 O LLM precisa do Ollama ligado; as respostas ficam em cache (dados_privados/cache/llm).
 """
@@ -26,6 +27,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 from arquiteto_auditor.config import pasta_de_dados  # noqa: E402
 from arquiteto_auditor.dominio.modelos import StatusConfirmacao  # noqa: E402
 from arquiteto_auditor.extracao.parametros.extrator import ler_parametros  # noqa: E402
+from arquiteto_auditor.extracao.parametros.hierarquia import adotar  # noqa: E402
 from arquiteto_auditor.extracao.texto_corrido import TextoCorrido, normalizar  # noqa: E402
 from arquiteto_auditor.ingestao.leitor import LeitorPDF  # noqa: E402
 from arquiteto_auditor.llm.cliente import ClienteLLM  # noqa: E402
@@ -65,6 +67,7 @@ def main(argumentos: list[str]) -> int:
 
     contagem: dict[str, Counter] = {"prefeitura": Counter(), "condominio": Counter()}
     zonas, evidencias, pendencias, graves = Counter(), Counter(), Counter(), []
+    adocao = Counter()
     inicio = time.time()
     for pasta in sorted(p for p in PASTA.iterdir() if p.is_dir()):
         gabarito = json.loads((pasta / "gabarito.json").read_text(encoding="utf-8"))
@@ -75,6 +78,7 @@ def main(argumentos: list[str]) -> int:
         especificacao = json.loads((pasta / "especificacao.json").read_text(encoding="utf-8"))
         esperados = gabarito["valores_esperados"]
         area = esperados["LOTE_AREA_MIN"]["calculado"]  # na análise real: a da matrícula
+        lidos = {}
         for arquivo, fonte in DOCUMENTOS:
             caminho = pasta / arquivo
             documento = leitor.ler(caminho)
@@ -82,6 +86,7 @@ def main(argumentos: list[str]) -> int:
             lido = ler_parametros(caminho, documento, fonte, cliente=cliente,
                                   nome_condominio=especificacao["identificacao"]["condominio"],
                                   area_lote=area)
+            lidos[fonte] = lido
             if fonte == "prefeitura":
                 zona = lido.zona.valor if lido.zona else None
                 zonas["certa" if zona == gabarito["zona"] else "errada ou ausente"] += 1
@@ -105,6 +110,22 @@ def main(argumentos: list[str]) -> int:
                           f"lido={valor.valor if valor else None}"
                           f"{' (pendente)' if pendente else ''}"
                           f"{' — ' + valor.evidencias[0].trecho[:70] if valor else ''}")
+        adotados = adotar(lidos["prefeitura"], lidos["condominio"])
+        for chave in sorted(set(adotados) | {k for k, v in esperados.items() if "adotado" in v}):
+            adotado = adotados.get(chave)
+            resultado = comparar(adotado.valor.valor if adotado else None,
+                                 esperados.get(chave, {}).get("adotado"))
+            adocao[resultado] += 1
+            pendente = bool(adotado and adotado.valor.status == StatusConfirmacao.PENDENTE)
+            adocao["pendentes"] += pendente
+            if resultado in ("errado", "falso valor") and not pendente:
+                graves.append(f"{pasta.name} adotado {chave}")
+            if adotado and adotado.conflito:
+                adocao["conflitos registrados"] += 1
+            if detalhes and resultado != "certo":
+                print(f"  {pasta.name} adotado    {chave:16} {resultado:14} "
+                      f"esperado={esperados.get(chave, {}).get('adotado')} "
+                      f"lido={adotado.valor.valor if adotado else None}")
 
     print(f"\nZona da lei: {dict(zonas)}")
     for fonte, c in contagem.items():
@@ -112,6 +133,7 @@ def main(argumentos: list[str]) -> int:
         taxa = 100 * c["certo"] / total if total else 0.0
         print(f"{fonte:10}: {c['certo']}/{total} certos ({taxa:.1f}%) — {dict(c)}; "
               f"pendentes: {pendencias[fonte]}")
+    print(f"Valor adotado (prefeitura prevalece): {dict(adocao)}")
     print(f"Evidências: {dict(evidencias)}")
     print(f"Errados ou inventados SEM pendência: {len(graves)} {graves}")
     if cliente:

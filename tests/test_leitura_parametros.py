@@ -18,9 +18,10 @@ from arquiteto_auditor.dominio.documento import (
     Palavra,
     TipoPagina,
 )
-from arquiteto_auditor.dominio.modelos import TipoDocumento
+from arquiteto_auditor.dominio.modelos import Evidencia, OrigemValor, TipoDocumento, ValorExtraido
 from arquiteto_auditor.extracao.parametros.definicoes import DEFINICOES
-from arquiteto_auditor.extracao.parametros.extrator import ler_parametros
+from arquiteto_auditor.extracao.parametros.extrator import ParametrosDoDocumento, ler_parametros
+from arquiteto_auditor.extracao.parametros.hierarquia import adotar
 from arquiteto_auditor.extracao.parametros.tabelas import (
     condicao_atendida,
     ler_tabelas_de_parametros,
@@ -149,6 +150,8 @@ LEI = [
     "parâmetros: a) recuo frontal mínimo: 5,00 m; b) taxa de ocupação máxima: 50%;",
     "Art. 22. Na ZR-2, o recuo frontal mínimo será de 5,00 m. (Redação dada pela Lei",
     "nº 282, de 2016) Redação anterior: “Na ZR-2, o recuo frontal mínimo será de 7,00 m.”",
+    "ANEXO II - PARÂMETROS URBANÍSTICOS POR ZONA",
+    "ES | Recuo frontal mínimo (m) 5,00 4,00",
 ]
 
 
@@ -177,6 +180,7 @@ def test_valor_do_llm_confirmado_pela_citacao():
     _resposta("Na ZR-2, o recuo frontal mínimo será de 7,00 m.", 7.0),  # redação anterior
     _resposta("a) recuo frontal mínimo: 6,00 m;", 6.0),  # outra zona (ZR-1)
     _resposta("b) taxa de ocupação máxima: 50%;", 50),  # outro parâmetro
+    _resposta("Recuo frontal mínimo (m) 5,00 4,00", 5.0),  # sem código de zona (tabela no OCR)
 ])
 def test_resposta_errada_do_llm_e_descartada(resposta):
     lidos, _ = _ler_texto(LEI, {"recuo frontal mínimo": resposta})
@@ -257,3 +261,51 @@ def test_extrator_com_e_sem_llm(tmp_path):
     desligado = ler_parametros(caminho, documento, "prefeitura", cliente=_Desligado(),
                                nome_condominio="Residencial Correia")
     assert desligado.sem_llm and desligado.zona.valor == "ZR-2"
+
+
+# ------------------------------------------------------------------ hierarquia
+
+
+def _lido(chave, valor, documento):
+    return ValorExtraido(campo=chave, valor=valor, origem=OrigemValor.VETORIAL, confianca=0.9,
+                         evidencias=[Evidencia(documento=documento, pagina=2,
+                                               trecho=f"{chave} = {valor}")])
+
+
+def _documento(fonte, **valores):
+    arquivo = "lei.pdf" if fonte == "prefeitura" else "norma.pdf"
+    return ParametrosDoDocumento(arquivo=arquivo, fonte=fonte, valores={
+        chave: _lido(chave, valor, arquivo) for chave, valor in valores.items()})
+
+
+def test_prefeitura_prevalece_sobre_o_condominio():
+    adotados = adotar(_documento("prefeitura", TO_MAX=50.0, RECUO_FRONTAL=5.0),
+                      _documento("condominio", TO_MAX=35.0, RECUO_FRONTAL=5.0,
+                                 MURO_ALTURA_MAX=2.2))
+    to = adotados["TO_MAX"]
+    assert (to.valor.valor, to.fonte, to.conflito) == (50.0, "prefeitura", True)
+    assert to.valor_condominio.valor == 35.0
+    assert "define 35" in to.observacao and "norma.pdf, pág. 2" in to.observacao
+    assert "prevalece" in to.observacao
+
+    recuo = adotados["RECUO_FRONTAL"]
+    assert (recuo.valor.valor, recuo.fonte, recuo.conflito) == (5.0, "prefeitura", False)
+    assert recuo.observacao == "A norma do condomínio define o mesmo valor."
+
+    muro = adotados["MURO_ALTURA_MAX"]  # só o condomínio define (e é o normal)
+    assert (muro.valor.valor, muro.fonte) == (2.2, "condominio")
+    assert muro.valor.status == "automatico"
+
+
+def test_parametro_da_lei_achado_so_no_condominio_fica_pendente():
+    """"Não achei na lei" não é "a lei não define": a leitura da lei pode ter falhado."""
+    adotados = adotar(_documento("prefeitura"), _documento("condominio", RECUO_FUNDOS=1.5))
+    recuo = adotados["RECUO_FUNDOS"]
+    assert (recuo.valor.valor, recuo.fonte) == (1.5, "condominio")
+    assert recuo.valor.status == "pendente_confirmacao"
+    assert "Confirme se a lei municipal" in recuo.observacao
+
+
+def test_nada_e_inventado_sem_documentos():
+    assert adotar(None, None) == {}
+    assert set(adotar(_documento("prefeitura", CA_MAX=1.0), None)) == {"CA_MAX"}
