@@ -49,3 +49,14 @@ class MatriculaLida(_Modelo):
     atos: list[AtoMatricula] = Field(default_factory=list)
     estado_atual: dict[str, ValorExtraido] = Field(default_factory=dict)
     pendencias: list[str] = Field(default_factory=list)  # atos não compreendidos etc.
+
+
+class EscrituraLida(_Modelo):
+    """Escritura pública: os dados da venda NA DATA em que foi lavrada.
+
+    A área descrita pode ser anterior a uma retificação: a área atual vale pela matrícula.
+    """
+
+    arquivo: str
+    campos: dict[str, ValorExtraido] = Field(default_factory=dict)
+    pendencias: list[str] = Field(default_factory=list)

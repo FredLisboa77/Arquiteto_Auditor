@@ -21,7 +21,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src"))
 
 from arquiteto_auditor.avaliacao.verdade_registro import verdade_do_registro  # noqa: E402
-from arquiteto_auditor.extracao.registro import ler_matricula  # noqa: E402
+from arquiteto_auditor.extracao.registro import ler_escritura, ler_matricula  # noqa: E402
 from arquiteto_auditor.ingestao.leitor import LeitorPDF  # noqa: E402
 
 PASTA = RAIZ / "dados_sinteticos" / "projetos"
@@ -37,7 +37,7 @@ def main(argumentos: list[str]) -> int:
     reservados, detalhes = "--reservados" in argumentos, "--detalhes" in argumentos
     nomes = [a for a in argumentos if not a.startswith("--")]
     leitor = LeitorPDF()
-    atos, estado = Counter(), Counter()
+    atos, estado, escritura = Counter(), Counter(), Counter()
     conjuntos = []
     for pasta in sorted(p for p in PASTA.iterdir() if p.is_dir()):
         gabarito = json.loads((pasta / "gabarito.json").read_text(encoding="utf-8"))
@@ -80,6 +80,23 @@ def main(argumentos: list[str]) -> int:
                 print(f"   {pasta.name} {campo}: esperado {esperado!r}, "
                       f"lido {valor.valor if valor else None!r}")
 
+        lida_escritura = ler_escritura(leitor.ler(pasta / "escritura.pdf"))
+        for campo, esperado in (("TERRENO_AREA", verdade.escritura_area),
+                                ("COMPRADOR", verdade.escritura_comprador),
+                                ("DATA_LAVRATURA", verdade.escritura_data)):
+            valor = lida_escritura.campos.get(campo)
+            escritura["esperados"] += 1
+            certo = valor is not None and (
+                abs(valor.valor - esperado) <= 0.005 if isinstance(esperado, float)
+                else _texto(valor.valor) == _texto(esperado))
+            pendente = bool(valor and valor.status == "pendente_confirmacao")
+            escritura["certos"] += certo
+            escritura["pendentes"] += pendente
+            escritura["errados automáticos"] += bool(valor) and not certo and not pendente
+            if detalhes and not certo:
+                print(f"   {pasta.name} escritura {campo}: esperado {esperado!r}, "
+                      f"lido {valor.valor if valor else None!r}")
+
     print(f"Conjuntos: {', '.join(conjuntos)}\n")
     print(f"Atos: {atos['certos']}/{atos['esperados']} certos "
           f"({100 * atos['certos'] / max(atos['esperados'], 1):.1f}%); "
@@ -88,6 +105,10 @@ def main(argumentos: list[str]) -> int:
           f"({100 * estado['certos'] / max(estado['esperados'], 1):.1f}%); "
           f"{estado['com ato de origem']} com ato de origem; {estado['pendentes']} pendentes; "
           f"{estado['errados automáticos']} errados SEM pendência (precisa ser 0)")
+    print(f"Escritura (área, comprador, data): {escritura['certos']}/{escritura['esperados']} "
+          f"certos ({100 * escritura['certos'] / max(escritura['esperados'], 1):.1f}%); "
+          f"{escritura['pendentes']} pendentes; "
+          f"{escritura['errados automáticos']} errados SEM pendência (precisa ser 0)")
     return 0
 
 

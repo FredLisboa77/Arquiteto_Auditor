@@ -17,20 +17,18 @@ import re
 from dataclasses import dataclass
 
 from arquiteto_auditor.dominio.modelos import OrigemValor, StatusConfirmacao, ValorExtraido
-from arquiteto_auditor.dominio.numeros import encontrar_valores, numero_do_extenso
 from arquiteto_auditor.dominio.registro import AtoMatricula, TipoAto
+from arquiteto_auditor.extracao.registro.comum import AreaLida, NomeLido, ler_area, ler_nome
 from arquiteto_auditor.extracao.texto_corrido import TextoCorrido, normalizar
 
 LIMIAR_OCR = 0.6  # abaixo disso, o valor lido por OCR vai para confirmação
 TAMANHO_CABECALHO = 12  # "R-3/15.860": o código do ato, no início do cabeçalho
 CONFIANCA = 0.9
 
-_AREA = re.compile(r"AREA\s+(?:TOTAL\s+)?DE\s+")
 _PROPRIETARIO = re.compile(r"PROPRIETARI[OA]S?\s*:\s*")
 _ADQUIRENTE = re.compile(r"ADQUIRENTES?\s*:\s*|OUTORGAD[OA]S?\s+COMPRADOR\w*\s*:\s*"
                          r"|POR\s+(?:VENDA|DOACAO)\s*,?\s*(?:AO|A)\s+")
 _CITACAO = re.compile(r"\b(?P<letra>R|AV)\s*[-.]?\s*(?P<numero>\d{1,3})\s*/")
-_ABREVIACOES = ("LTDA", "CIA", "JR", "S/A", "S.A", "EIRELI", "ME", "EPP")
 
 
 @dataclass(frozen=True)
@@ -38,53 +36,6 @@ class AtoComPosicao:
     ato: AtoMatricula
     inicio: int  # trecho do ato no texto corrido
     fim: int
-
-
-def _nome(plano: str, inicio: int) -> tuple[str, int] | None:
-    """Nome a partir de `inicio`, até a vírgula, o ponto-e-vírgula ou o fim da frase."""
-    trecho = plano[inicio:inicio + 120]
-    for m in re.finditer(r"[,;]|\.(?=\s|$)", trecho):
-        if m.group() == ".":
-            palavra = trecho[:m.start()].split()[-1:] or [""]
-            if normalizar(palavra[0]).rstrip(".") in _ABREVIACOES:
-                fim = m.end()  # "Ltda." faz parte do nome
-                break
-        fim = m.start()
-        break
-    else:
-        return None
-    nome = " ".join(trecho[:fim].split())
-    return (nome, inicio + fim) if re.search(r"[A-Za-zÀ-ú]{2}", nome) else None
-
-
-@dataclass(frozen=True)
-class _AreaLida:
-    valor: float
-    inicio: int  # trecho "área de N m²" (a evidência)
-    fim: int
-    inicio_numero: int  # só o número (a confiança do OCR vem daqui)
-    fim_numero: int
-    extenso: int | None  # parte inteira do valor por extenso, quando há
-
-
-def _area(texto: str, normalizado: str, inicio: int, fim: int) -> _AreaLida | None:
-    """A primeira "área de N m² (extenso)" do trecho.
-
-    Logo depois de "área de", uma medida em metros só pode ser o "m²" mal lido pelo OCR
-    ("m?" vira "m"); por isso "m" também é aceito.
-    """
-    m = _AREA.search(normalizado, inicio, fim)
-    if not m:
-        return None
-    for valor in encontrar_valores(texto[m.end():m.end() + 40]):
-        if valor.unidade in ("m2", "m", None) and valor.valor > 0:
-            depois = m.end() + valor.fim
-            parenteses = re.match(r"[^(]{0,8}\(([^)]{3,160})\)", texto[depois:depois + 180])
-            extenso = numero_do_extenso(parenteses.group(1)) if parenteses else None
-            numero = m.end() + valor.inicio
-            tamanho = len(re.match(r"[\d.,]+", valor.texto).group())
-            return _AreaLida(valor.valor, m.start(), depois, numero, numero + tamanho, extenso)
-    return None
 
 
 def calcular_estado(atos: list[AtoComPosicao], corrido: TextoCorrido, arquivo: str,
@@ -107,7 +58,7 @@ def calcular_estado(atos: list[AtoComPosicao], corrido: TextoCorrido, arquivo: s
             if ato.tipo == TipoAto.RETIFICACAO:
                 seguinte = normalizado.find("SEGUINTE", inicio, fim)
                 busca = seguinte if seguinte >= 0 else inicio
-            area = _area(plano, normalizado, busca, fim)
+            area = ler_area(plano, normalizado, busca, fim)
             if area:
                 achados["TERRENO_AREA"] = (area.valor, indice, (area.inicio, area.fim),
                                            (area.inicio_numero, area.fim_numero), area)
@@ -115,16 +66,16 @@ def calcular_estado(atos: list[AtoComPosicao], corrido: TextoCorrido, arquivo: s
                 pendencias.append(f"Retificação {ato.codigo}: nova área não encontrada.")
         if ato.tipo == TipoAto.ABERTURA:
             m = _PROPRIETARIO.search(normalizado, inicio, fim)
-            nome = _nome(plano, m.end()) if m else None
+            nome = ler_nome(plano, m.end()) if m else None
             if nome:
-                achados["PROPRIETARIO"] = (nome[0], indice, (m.start(), nome[1]),
-                                           (m.end(), nome[1]), None)
+                achados["PROPRIETARIO"] = (nome.texto, indice, (m.start(), nome.fim),
+                                           (m.end(), nome.fim), nome)
         if ato.tipo in (TipoAto.COMPRA_E_VENDA, TipoAto.DOACAO):
             m = _ADQUIRENTE.search(normalizado, inicio, fim)
-            nome = _nome(plano, m.end()) if m else None
+            nome = ler_nome(plano, m.end()) if m else None
             if nome:
-                achados["PROPRIETARIO"] = (nome[0], indice, (m.start(), nome[1]),
-                                           (m.end(), nome[1]), None)
+                achados["PROPRIETARIO"] = (nome.texto, indice, (m.start(), nome.fim),
+                                           (m.end(), nome.fim), nome)
             else:
                 pendencias.append(f"Ato {ato.codigo}: adquirente não encontrado.")
         if ato.tipo in (TipoAto.ALIENACAO_FIDUCIARIA, TipoAto.HIPOTECA):
@@ -159,7 +110,10 @@ def calcular_estado(atos: list[AtoComPosicao], corrido: TextoCorrido, arquivo: s
                    if posicao > atos[indice].inicio]
         if ocr is not None and ocr < LIMIAR_OCR:
             motivos.append(f"leitura (OCR) com baixa confiança ({ocr:.2f})")
-        if lido is not None and lido.extenso is not None and lido.extenso != int(lido.valor):
+        if isinstance(lido, NomeLido) and lido.limpo:
+            motivos.append("sinais soltos do OCR removidos do nome")
+        divergente = isinstance(lido, AreaLida) and lido.extenso is not None
+        if divergente and lido.extenso != int(lido.valor):
             motivos.append(f"o número não confere com o extenso ({lido.extenso} m²)")
         escaneado = corrido.confianca(*trecho) is not None
         origem = atos[indice]

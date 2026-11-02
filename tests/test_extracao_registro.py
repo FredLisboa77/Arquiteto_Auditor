@@ -1,5 +1,7 @@
 """Testes da leitura da matrícula e da escritura (Fase 7)."""
 
+import pytest
+
 from arquiteto_auditor.dominio.documento import DocumentoLido, PaginaLida, TipoPagina
 from arquiteto_auditor.dominio.modelos import TipoDocumento
 from arquiteto_auditor.extracao.registro import ler_matricula
@@ -247,3 +249,61 @@ def test_data_no_inicio_de_linha_sem_separador_nao_e_cabecalho():
         "a João Lima, brasileiro. O Oficial."]]
     lida = ler_matricula(_matricula(paginas))
     assert lida.estado_atual["PROPRIETARIO"].status == StatusConfirmacao.AUTOMATICO
+
+
+# ---------------------------------------------------------------- escritura
+
+from arquiteto_auditor.extracao.registro import ler_escritura  # noqa: E402
+
+ESCRITURA = [
+    "2º TABELIONATO DE NOTAS DE VILA NOVA", "ESCRITURA PÚBLICA DE COMPRA E VENDA",
+    "LIVRO 120 - FOLHAS 33/35 - PROTOCOLO 999", "VALOR: R$ 300.000,00",
+    "SAIBAM quantos esta pública escritura virem que, aos 02 de abril de 2012, nesta",
+    "cidade de Vila Nova, perante mim, compareceram as partes:",
+    "OUTORGANTE VENDEDOR(A): Alfa Loteadora Ltda., inscrita no CNPJ sob nº 1.",
+    "OUTORGADO(A) COMPRADOR(A): João Lima, brasileiro, portador do CPF nº 1.",
+    "DO IMÓVEL: Lote 7 da Quadra B, com a área de 300,00 m² (trezentos metros",
+    "quadrados). Imóvel matriculado sob nº 12.345 no Registro de Imóveis de Vila Nova.",
+    "Vila Nova, 02 de abril de 2012.",
+]
+
+
+def test_le_os_dados_da_escritura():
+    campos = ler_escritura(_documento(_pagina_ocr(1, ESCRITURA),
+                                      tipo=TipoDocumento.ESCRITURA)).campos
+    assert {k: v.valor for k, v in campos.items()} == {
+        "TERRENO_AREA": 300.0, "COMPRADOR": "João Lima", "VENDEDOR": "Alfa Loteadora Ltda.",
+        "DATA_LAVRATURA": "02/04/2012", "LIVRO": "120", "FOLHAS": "33/35",
+        "MATRICULA": "12.345"}
+    assert all(v.evidencias and v.evidencias[0].pagina == 1 for v in campos.values())
+    assert campos["TERRENO_AREA"].status == StatusConfirmacao.AUTOMATICO
+
+
+def test_escritura_com_ocr_ruim_fica_pendente():
+    campos = ler_escritura(_documento(_pagina_ocr(1, ESCRITURA, confianca=0.3),
+                                      tipo=TipoDocumento.ESCRITURA)).campos
+    assert campos["COMPRADOR"].status == StatusConfirmacao.PENDENTE
+
+
+@pytest.mark.parametrize("rotulo", ["OUTORGADO(A) COMPRADOR(AY).:", "OUTORGADO(A) : COMPRADOR(A):",
+                                    "OUTORGADA COMPRADORA:"])
+def test_rotulo_do_comprador_com_sujeira_de_ocr(rotulo):
+    linhas = ESCRITURA[:7] + [f"{rotulo} João Lima, brasileiro."] + ESCRITURA[8:]
+    campos = ler_escritura(_documento(_pagina_ocr(1, linhas), tipo=TipoDocumento.ESCRITURA))
+    assert campos.campos["COMPRADOR"].valor == "João Lima"
+
+
+def test_linha_de_assinaturas_nao_e_rotulo_do_comprador():
+    linhas = ESCRITURA[:7] + ESCRITURA[8:] + ["OUTORGANTE VENDEDOR(A) - OUTORGADO(A) COMPRADOR(A) -"
+                                              " TABELIÃO"]
+    campos = ler_escritura(_documento(_pagina_ocr(1, linhas), tipo=TipoDocumento.ESCRITURA))
+    assert "COMPRADOR" not in campos.campos
+
+
+def test_nome_com_sinais_soltos_do_ocr_e_limpo_e_fica_pendente():
+    linhas = ESCRITURA[:7] + ["OUTORGADO(A) COMPRADOR(A): João 'Lima D'Ávila, brasileiro."] \
+        + ESCRITURA[8:]
+    comprador = ler_escritura(_documento(_pagina_ocr(1, linhas),
+                                         tipo=TipoDocumento.ESCRITURA)).campos["COMPRADOR"]
+    assert comprador.valor == "João Lima D'Ávila"
+    assert comprador.status == StatusConfirmacao.PENDENTE
